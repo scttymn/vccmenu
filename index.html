@@ -42,7 +42,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Image Fullscreen Slideshow</title>
+    <title>Valley Coffee Co Menu</title>
     <style>
         body {
             margin: 0;
@@ -55,22 +55,23 @@
             justify-content: center;
             align-items: center;
             height: 100vh;
+            margin: 0;
+            padding: 0;
         }
-        .image-container img {
-            max-width: 80vw;
-            max-height: 80vh;
-            object-fit: contain;
+        .image-container:fullscreen {
+            margin: 0;
+            padding: 0;
         }
         .image-container:fullscreen img {
-            width: 100vw;
-            height: 100vh;
-            object-fit: contain;
+            width: 100%;
+            height: 100%;
+            object-fit: fill;
         }
     </style>
 </head>
 <body>
     <div class="image-container" id="imageContainer">
-        <img src="menu.jpg" alt="Menu Image">
+        <img src="menu.jpg" alt="Menu Image" id="fullscreenImage">
     </div>
 
     <script>
@@ -78,11 +79,15 @@
 
         imageContainer.addEventListener('click', () => {
             if (!document.fullscreenElement) {
-                imageContainer.requestFullscreen().catch(err => {
-                    console.error(`Error attempting to enable full-screen mode: ${err.message}`);
-                });
+                if (imageContainer.requestFullscreen) {
+                    imageContainer.requestFullscreen().catch(err => {
+                        console.error(`Error attempting to enable full-screen mode: ${err.message}`);
+                    });
+                }
             } else {
-                document.exitFullscreen();
+                if (document.exitFullscreen) {
+                    document.exitFullscreen();
+                }
             }
         });
     </script>
