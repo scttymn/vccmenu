@@ -1,4 +1,4 @@
-# Valley Coffee Co menu
+# Valley Coffee Co Menu Manager
 
 A Gantry + SQLite app deployed with Houston. `/` is the TV menu; `/admin` is the phone-friendly editor. The original GitHub Pages URL can remain the TV's entry point and read the public `/api/menu` endpoint.
 
@@ -25,7 +25,9 @@ The app is at `http://vccmenu.localhost`. SQLite lives in the `data` volume; mig
 
 There is no public registration or hard-coded password. For the first admin account, set `ADMIN_EMAIL` and `ADMIN_PASSWORD` through Houston secrets before deploying. Startup creates the account only when no users exist; it never resets an existing password. These bootstrap secrets can be removed after account creation.
 
-To add more editors, generate a one-use setup code:
+Once signed in, open **Users** in Menu Manager to add an account with an email and starting password. Every account has full access to edit the menu and add users. Share the starting password privately; the new user can change it using **Password**. No invitation email is sent.
+
+For server-side account setup, you can also generate a one-use setup code:
 
 ```sh
 bin/gantry task invite-editor
