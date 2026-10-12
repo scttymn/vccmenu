@@ -1,0 +1,41 @@
+{
+  "brand": "Valley Coffee Co",
+  "title": "Menu",
+  "sections": [
+    {"name":"Drinks","note":"","footer":"","extras":[],"items":[
+      {"name":"Latte","price":"$5.5 / $6 / $6.5","visible":true},
+      {"name":"Americano","price":"$3 / $3.5 / $4","visible":true},
+      {"name":"Drip Coffee","price":"$3 / $3.5 / $4","visible":true},
+      {"name":"Cold Brew","price":"$4 / $4.5 / $5","visible":true},
+      {"name":"Cold Brew With Milk","price":"$5 / $5.5 / $6","visible":true},
+      {"name":"Cappuccino","price":"$4.5","visible":true},
+      {"name":"Breve","price":"$5.5 / $6 / $6.5","visible":true},
+      {"name":"Frappe","price":"$5.5 / $6 / $6.5","visible":true},
+      {"name":"Energy Refresher","price":"$4.5 / $5 / $5.5","visible":true},
+      {"name":"Hot Tea","price":"$3","visible":true},
+      {"name":"Hot Chocolate","price":"$4 / $4.5 / $5","visible":true},
+      {"name":"Steamer","price":"$3 / $3.5 / $4","visible":true},
+      {"name":"Soda","price":"$2 / $3","visible":true},
+      {"name":"Chai Latte","price":"$4.5 / $5 / $5.5","visible":true},
+      {"name":"Matcha Latte","price":"$4.5 / $5 / $5.5","visible":true},
+      {"name":"Lemonade","price":"$3.5 / $4 / $4.5","visible":true},
+      {"name":"Strawberry Banana Smoothie","price":"$5 / $5.5 / $6","visible":true}
+    ]},
+    {"name":"Food","note":"","footer":"Milk alternatives $1 (Oat or Almond)","extras":[],"items":[
+      {"name":"Chocolate Chip Cookie","price":"$3.99","visible":true},
+      {"name":"Cinnamon Roll","price":"$4.99","visible":true},
+      {"name":"Pumpkin Bread","price":"$3.99","visible":true},
+      {"name":"Protein Balls (2)","price":"$3","visible":true},
+      {"name":"Lemon Brownie","price":"$4.50","visible":true},
+      {"name":"Gluten-Free Blueberry Muffin","price":"$4","visible":true}
+    ]},
+    {"name":"Ice Cream","note":"Vanilla, Chocolate & Strawberry","footer":"Toppings:","extras":["Chocolate Sauce","Caramel Sauce","Strawberry Sauce","Oreo Cookie Pieces","Sprinkles","Cookie Dough","Chocolate Chips","Reese’s","Whipped Cream"],"items":[
+      {"name":"Single Scoop","price":"$2","visible":true},
+      {"name":"Double Scoop","price":"$2.5","visible":true},
+      {"name":"Triple Scoop","price":"$3","visible":true},
+      {"name":"Toppings","price":"$.75 each","visible":true},
+      {"name":"Milk Shake","price":"$5","visible":true},
+      {"name":"Affogato","price":"$5","visible":true}
+    ]}
+  ]
+}
