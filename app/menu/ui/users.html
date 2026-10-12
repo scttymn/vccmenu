@@ -1,6 +1,6 @@
 <!DOCTYPE html>
-<html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><meta name="robots" content="noindex"><title>Users · Valley Coffee Co</title><link rel="stylesheet" href="/menu-assets/editor.css"></head>
-<body><main class="editor users-page"><header class="masthead"><a class="wordmark" href="/admin">VALLEY COFFEE CO<span>MENU MANAGER</span></a><nav class="account-nav"><a href="/admin">Menu</a><a href="/admin/password">Password</a><form action="/logout" method="post"><button class="text-button">Sign out</button></form></nav></header>
+<html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><meta name="robots" content="noindex"><title>Users · Valley Coffee Co</title><link rel="stylesheet" href="/menu-assets/editor.css?v=nav-1"><script src="/menu-assets/navigation.js?v=1" defer></script></head>
+<body><main class="editor users-page">{{template "navigation" "users"}}
 <div class="intro"><p class="eyebrow">A LITTLE HELP BEHIND THE COUNTER</p><h1>Your people.</h1><p>Everyone with an account can edit the menu and add other users.</p></div>
 {{if .Added}}<p class="notice" role="status">User added. They can sign in now and change their password from the editor.</p>{{end}}
 <div class="users-grid"><section class="users-panel"><h2>Who’s on the team</h2><ul class="users-list">{{range .Users}}<li><span>{{.Email}}</span>{{if eq .ID $.CurrentID}}<small>You</small>{{else}}<small>Full access</small>{{end}}</li>{{end}}</ul></section>

@@ -5,3 +5,22 @@
 .account-nav{display:flex;align-items:center;gap:10px;font-size:12px}.account-nav .text-button{font-size:12px}
 
 .users-grid{display:grid;grid-template-columns:1fr 1fr;gap:24px}.users-panel{border:1px solid var(--line);border-radius:12px;background:var(--white);padding:24px;min-width:0}.users-panel h2{font-size:26px;margin-bottom:18px}.users-panel .description{font-size:14px;color:var(--muted)}.users-panel label{margin:18px 0}.users-panel button{width:100%}.users-list{list-style:none;padding:0;margin:0}.users-list li{display:flex;align-items:center;justify-content:space-between;gap:14px;padding:16px 0;border-bottom:1px solid var(--line)}.users-list li:last-child{border:0}.users-list span{overflow-wrap:anywhere;min-width:0}.users-list small{color:var(--muted);white-space:nowrap}.notice{background:var(--accent);padding:16px;border-radius:8px;margin-bottom:24px}@media(max-width:650px){.users-grid{grid-template-columns:1fr}.masthead{flex-wrap:wrap;gap:16px}.account-nav{flex-wrap:wrap}.users-panel{padding:20px}}
+
+/* Shared account navigation stays in one row until the mobile breakpoint. */
+.masthead{gap:24px;flex-wrap:nowrap}
+.account-nav{display:flex;align-items:center;gap:8px;flex-wrap:nowrap;font-size:14px}
+.account-nav a,.account-nav .text-button{display:flex;align-items:center;min-height:44px;padding:10px 12px;border-radius:8px;font-size:14px;white-space:nowrap;text-decoration:none;font-weight:600}
+.account-nav a:hover,.account-nav .text-button:hover{background:var(--accent)}
+.account-nav a[aria-current="page"]{background:var(--accent)}
+.account-nav form{margin:0}
+.nav-toggle{display:none;background:transparent;color:var(--ink);padding:10px;min-width:44px;min-height:44px}
+.password-panel{margin:48px auto;padding:0}
+@media(max-width:720px){
+  .masthead{flex-wrap:wrap;gap:16px}
+  .nav-ready .nav-toggle{display:flex;align-items:center;justify-content:center;margin-left:auto}
+  .account-nav{width:100%;flex-direction:column;align-items:stretch;gap:4px;border-top:1px solid var(--line);padding-top:12px}
+  .nav-ready .account-nav{display:none}
+  .nav-ready.nav-open .account-nav{display:flex}
+  .account-nav .text-button{width:100%;text-align:left}
+  .password-panel{margin:32px auto;padding:0}
+}
