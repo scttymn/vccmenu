@@ -1,0 +1,41 @@
+package menu
+
+import "github.com/scttymn/vccmenu/app/shared/layout"
+import "github.com/scttymn/vccmenu/assets"
+
+templ users(p usersPage) {
+	@layout.Layout(layout.Page{Title: "Users · Valley Coffee Co", Styles: assets.EditorStyles, Scripts: []string{"navigation.js"}, NoIndex: true}) {
+		<main class="editor users-page">
+			@layout.Navigation("users")
+			<div class="intro"><p class="eyebrow">A LITTLE HELP BEHIND THE COUNTER</p><h1>Your people.</h1><p>Everyone with an account can edit the menu and add other users.</p></div>
+			if p.Added {
+				<p class="notice" role="status">User added. They can sign in now and change their password from the editor.</p>
+			}
+			<div class="users-grid">
+				<section class="users-panel">
+					<h2>Who’s on the team</h2>
+					<ul class="users-list">
+						for _, user := range p.Users {
+							<li>
+								<span>{ user.Email }</span>
+								if user.ID == p.CurrentID {
+									<small>You</small>
+								} else {
+									<small>Full access</small>
+								}
+							</li>
+						}
+					</ul>
+				</section>
+				<section class="users-panel">
+					<h2>Add a user</h2>
+					<p class="description">Set a starting password and share it with them privately. No email is sent.</p>
+					if p.Error != "" {
+						<p class="error" role="alert">{ p.Error }</p>
+					}
+					<form action="/admin/users" method="post"><label>Email<input type="email" name="email" value={ p.Email } maxlength="254" required autocomplete="off"/></label><label>Starting password<input type="password" name="password" required minlength="8" maxlength="72" autocomplete="new-password"/></label><label>Confirm password<input type="password" name="confirmation" required minlength="8" maxlength="72" autocomplete="new-password"/></label><button>Add user</button></form>
+				</section>
+			</div>
+		</main>
+	}
+}

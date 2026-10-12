@@ -1,0 +1,22 @@
+package menu
+
+import "github.com/scttymn/vccmenu/app/shared/layout"
+import "github.com/scttymn/vccmenu/assets"
+import "github.com/scttymn/gantry/auth"
+
+templ login(p auth.Page) {
+	@layout.Layout(layout.Page{Title: "Sign in · Valley Coffee Co", Styles: assets.EditorStyles, NoIndex: true}) {
+		<main class="auth">
+			<a href="/" class="wordmark">VALLEY COFFEE CO<span>MENU MANAGER</span></a>
+			<h1>Welcome back.</h1>
+			<p class="description">A fresh menu starts here.</p>
+			if p.Alert != "" {
+				<p role="alert" class="auth-error">{ p.Alert }</p>
+			}
+			if p.Notice != "" {
+				<p role="status">{ p.Notice }</p>
+			}
+			<form method="post" action="/login"><label>Email<input type="email" name="email_address" required autocomplete="username"/></label><label>Password<input type="password" name="password" required autocomplete="current-password" maxlength="72"/></label><button>Sign in</button></form>
+		</main>
+	}
+}

@@ -2,10 +2,14 @@
 package layout
 
 import "github.com/scttymn/vccmenu/assets"
+import gantryassets "github.com/scttymn/gantry/assets"
 
 // Page is what the layout needs from a page.
 type Page struct {
-	Title string
+	Title   string
+	Styles  *gantryassets.Styles
+	Scripts []string
+	NoIndex bool
 }
 
 templ Layout(p Page) {
@@ -15,8 +19,18 @@ templ Layout(p Page) {
 			<meta charset="utf-8"/>
 			<title>{ p.Title }</title>
 			<meta name="viewport" content="width=device-width,initial-scale=1"/>
-			@assets.Styles.Tag()
-			@assets.ImportMap.Tag()
+			if p.NoIndex {
+				<meta name="robots" content="noindex"/>
+			}
+			if p.Styles != nil {
+				@p.Styles.Tag()
+			} else {
+				@assets.Styles.Tag()
+				@assets.ImportMap.Tag()
+			}
+			for _, script := range p.Scripts {
+				<script src={ assets.Path(script) } defer></script>
+			}
 		</head>
 		<body>
 			{ children... }

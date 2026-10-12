@@ -1,0 +1,30 @@
+package layout
+
+templ Navigation(active string) {
+	<header class="masthead">
+		<a class="wordmark" href="/admin">VALLEY COFFEE CO<span>MENU MANAGER</span></a>
+		<button class="nav-toggle" type="button" aria-label="Open navigation" aria-expanded="false" aria-controls="account-navigation" hidden><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><path d="M3 6h18M3 12h18M3 18h18"></path></svg></button>
+		<nav id="account-navigation" class="account-nav" aria-label="Account navigation">
+			<a
+				href="/admin"
+				if active == "menu" {
+					aria-current="page"
+				}
+			>Menu</a>
+			<a
+				href="/admin/users"
+				if active == "users" {
+					aria-current="page"
+				}
+			>Users</a>
+			<a
+				href="/admin/password"
+				if active == "password" {
+					aria-current="page"
+				}
+			>Password</a>
+			<a href="/" target="_blank" rel="noopener">View TV menu ↗</a>
+			<form action="/logout" method="post"><button class="text-button" type="submit">Sign out</button></form>
+		</nav>
+	</header>
+}

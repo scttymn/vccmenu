@@ -1,5 +1,5 @@
 (function () {
-  var form = document.querySelector('form'), error = document.getElementById('setup-error');
+  var form = document.getElementById('setup-form'), error = document.getElementById('setup-error');
   form.onsubmit = async function (event) {
     event.preventDefault(); error.hidden = true;
     var button = form.querySelector('button'); button.disabled = true;

@@ -1,6 +1,6 @@
 # Valley Coffee Co Menu Manager
 
-A Gantry + SQLite app deployed with Houston. `/` is the TV menu; `/admin` is the phone-friendly editor. The original GitHub Pages URL can remain the TV's entry point and read the public `/api/menu` endpoint.
+A Gantry + SQLite app deployed with Houston. `https://vccmenu.svnmns.com/` is the TV menu; `/admin` is the phone-friendly editor.
 
 ## Editing
 
@@ -8,7 +8,7 @@ Sign in at `/admin`. Change names or prices, add or reorder items, and turn **On
 
 Prices are display text, so `$4`, `$4 / $4.50 / $5`, and `$.75 each` all work. The three-column TV board scales to fit, including in full-screen mode (click the menu or press Enter/F). Adding many items reduces the type size to keep everything visible.
 
-After the first successful load, the TV retains its last menu locally if the network or server becomes unavailable. Reconnecting picks up the latest saved menu. The GitHub Pages entry point retains the original image as a first-load fallback.
+After the first successful load, the TV retains its last menu locally if the network or server becomes unavailable. Reconnecting picks up the latest saved menu.
 
 ## Run locally
 
@@ -24,6 +24,8 @@ The app is at `http://vccmenu.localhost`. SQLite lives in the `data` volume; mig
 In development, startup and `bin/gantry db seed` also create the local editor account **admin@example.com** with password **Password1!**. This account is created only when `GANTRY_ENV=development`; seeding never resets its password or replaces existing users. Production and test environments do not create this account.
 
 Gantry Strict runs source checks when `bin/gantry dev` starts. Its router automatically injects a bottom warning panel into development pages when findings exist; no page-specific integration is needed. Run `bin/gantry check --strict` for the full check result. To hide the panel, set `GANTRY_DEV_WARNINGS=false` and restart development. Production never shows it.
+
+Every page uses the shared templ layout in `app/shared/layout`. Scripts and styles live in `assets/js` and `assets/css` and use Gantry's asset pipeline: small stylesheets are inlined, scripts are fingerprinted and cached, and production builds minify scripts. Page responses are not cached.
 
 ## Editor accounts
 
@@ -58,8 +60,8 @@ bin/gantry deploy --server --follow
 
 `SECRET_KEY` can be provided through Houston; when unset, Gantry creates and keeps the key in the database. Never put credentials in this repository.
 
-The public menu endpoint permits reads from `https://scttymn.github.io`. It excludes hidden items. Editor writes require a signed-in session on the app's own origin.
+The public menu endpoint excludes hidden items. Editor writes require a signed-in session on the app's own origin. The old GitHub Pages site is retired; TVs use the Houston address above.
 
 ## Menu source
 
-`app/menu/initial.json` contains the original menu and is used only to seed a new database. After setup, the editor/database is the source of truth. The original `menu.png` remains available for fallback and comparison.
+`app/menu/initial.json` contains the original menu and is used only to seed a new database. After setup, the editor/database is the source of truth.

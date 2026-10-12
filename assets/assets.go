@@ -22,6 +22,10 @@ var All = gantry.MustNew(files)
 // page's head while they're small, linked once they grow.
 var Styles = All.Styles("application.css")
 
+// Small page styles are inlined by Gantry to avoid another request before paint.
+var DisplayStyles = All.Styles("display.css")
+var EditorStyles = All.Styles("editor.css")
+
 // ImportMap is the page's JavaScript by name (Rails' config/importmap.rb):
 // js/application.js, the Stimulus controllers in js/controllers, and every
 // package in js/vendor ("@hotwired--turbo.js" is "@hotwired/turbo").

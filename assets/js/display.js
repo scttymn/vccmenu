@@ -2,7 +2,7 @@
   'use strict';
   var board = document.getElementById('board');
   var columns = document.getElementById('columns');
-  var endpoint = window.MENU_ENDPOINT || '/api/menu';
+	var endpoint = '/api/menu';
   var cacheKey = 'vcc-menu-v1:' + endpoint;
   var last = '';
   function node(tag, className, value) {

@@ -40,10 +40,7 @@ func (c Controller) usersPage(w http.ResponseWriter, r *http.Request, status int
 	if err := rows.Err(); err != nil {
 		return err
 	}
-	w.Header().Set("Content-Type", "text/html; charset=utf-8")
-	w.Header().Set("Cache-Control", "no-store")
-	w.WriteHeader(status)
-	return pages.ExecuteTemplate(w, "users.html", data)
+	return page(w, r, status, users(data))
 }
 func (c Controller) Users(w http.ResponseWriter, r *http.Request) error {
 	return c.usersPage(w, r, 200, "", "")

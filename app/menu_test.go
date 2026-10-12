@@ -88,8 +88,8 @@ func TestEditingAndPersistence(t *testing.T) {
 	if !strings.Contains(pub.Body.String(), "Coffee ") {
 		t.Fatal("renamed section missing from TV data")
 	}
-	if pub.Header().Get("Access-Control-Allow-Origin") != "https://scttymn.github.io" {
-		t.Fatal("missing TV origin")
+	if pub.Header().Get("Access-Control-Allow-Origin") != "" {
+		t.Fatal("obsolete GitHub Pages origin is still allowed")
 	}
 	saved.Sections[0].Items[0].Name = ""
 	bad, _ := json.Marshal(saved)

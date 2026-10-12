@@ -46,7 +46,6 @@ func (a *App) Handler() http.Handler {
 	rt.Handle("GET /api/menu", c.Public)
 	rt.Handle("GET /setup", c.Setup)
 	rt.Handle("POST /setup", c.CreateEditor)
-	rt.Mount("GET /menu-assets/", menu.Static())
 	rt.Scope("/admin", web.Pipeline{login.Required}, func(s *web.Scope) {
 		s.Handle("GET /{$}", c.Editor)
 		s.Handle("GET /menu", c.Read)

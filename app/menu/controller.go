@@ -1,72 +1,41 @@
 package menu
 
 import (
-	"crypto/sha256"
-	"embed"
 	"encoding/json"
 	"errors"
-	"fmt"
-	"html/template"
-	"io/fs"
 	"net/http"
 	"net/mail"
 	"strings"
 	"time"
 
+	"github.com/a-h/templ"
 	"github.com/scttymn/gantry/auth"
 	"github.com/scttymn/gantry/db"
 	"github.com/scttymn/gantry/token"
 	"github.com/scttymn/gantry/web"
 )
 
-//go:embed ui/*
-var ui embed.FS
-var pages = template.Must(template.New("").Funcs(template.FuncMap{"asset": assetURL}).ParseFS(ui, "ui/*.html"))
-
-func assetURL(name string) string {
-	content, err := ui.ReadFile("ui/" + name)
-	if err != nil {
-		panic(err)
-	}
-	return fmt.Sprintf("/menu-assets/%s?v=%x", name, sha256.Sum256(content))
-}
-
 type Controller struct {
 	DB   *db.DB
 	Auth *auth.Auth
 }
 
-func Static() http.Handler {
-	sub, _ := fs.Sub(ui, "ui")
-	files := http.StripPrefix("/menu-assets/", http.FileServer(http.FS(sub)))
-	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		// Unversioned TV clients must always revalidate after a deployment.
-		w.Header().Set("Cache-Control", "no-cache")
-		name := strings.TrimPrefix(r.URL.Path, "/menu-assets/")
-		if content, err := ui.ReadFile("ui/" + name); err == nil && r.URL.Query().Get("v") == fmt.Sprintf("%x", sha256.Sum256(content)) {
-			w.Header().Set("Cache-Control", "public, max-age=31536000, immutable")
-		}
-		files.ServeHTTP(w, r)
-	})
-}
-func page(w http.ResponseWriter, name string, data any) error {
-	w.Header().Set("Content-Type", "text/html; charset=utf-8")
+func page(w http.ResponseWriter, r *http.Request, status int, view templ.Component) error {
 	w.Header().Set("Cache-Control", "no-store")
-	return pages.ExecuteTemplate(w, name, data)
+	return web.Render(w, r, status, view)
 }
 func (c Controller) Display(w http.ResponseWriter, r *http.Request) error {
-	return page(w, "display.html", nil)
+	return page(w, r, http.StatusOK, display())
 }
 func (c Controller) Editor(w http.ResponseWriter, r *http.Request) error {
 	m, err := Load(r.Context(), c.DB)
 	if err != nil {
 		return err
 	}
-	// html/template safely JSON-encodes this value in the script context.
-	return page(w, "editor.html", m)
+	return page(w, r, http.StatusOK, editor(m))
 }
 func (c Controller) Login(w http.ResponseWriter, r *http.Request, p auth.Page) error {
-	return page(w, "login.html", p)
+	return page(w, r, http.StatusOK, login(p))
 }
 func (c Controller) Public(w http.ResponseWriter, r *http.Request) error {
 	m, err := Load(r.Context(), c.DB)
@@ -82,8 +51,6 @@ func (c Controller) Public(w http.ResponseWriter, r *http.Request) error {
 		}
 		m.Sections[k].Items = visible
 	}
-	// The existing GitHub Pages TV URL reads only this public endpoint.
-	w.Header().Set("Access-Control-Allow-Origin", "https://scttymn.github.io")
 	return respond(w, m)
 }
 func (c Controller) Read(w http.ResponseWriter, r *http.Request) error {
@@ -119,7 +86,7 @@ func (c Controller) Save(w http.ResponseWriter, r *http.Request) error {
 }
 func (c Controller) Setup(w http.ResponseWriter, r *http.Request) error {
 	w.Header().Set("Referrer-Policy", "no-referrer")
-	return page(w, "setup.html", nil)
+	return page(w, r, http.StatusOK, setup())
 }
 func (c Controller) CreateEditor(w http.ResponseWriter, r *http.Request) error {
 	if err := r.ParseForm(); err != nil {
@@ -170,7 +137,7 @@ func (c Controller) CreateEditor(w http.ResponseWriter, r *http.Request) error {
 }
 
 func (c Controller) Password(w http.ResponseWriter, r *http.Request) error {
-	return page(w, "password.html", nil)
+	return page(w, r, http.StatusOK, password())
 }
 
 func (c Controller) ChangePassword(w http.ResponseWriter, r *http.Request) error {
