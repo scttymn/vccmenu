@@ -29,13 +29,20 @@ There is no public registration and no default password. Generate a one-use setu
 bin/gantry task invite-editor
 ```
 
-On a deployed app, run `/app task invite-editor` in its Houston server console. Give the code privately to an editor, who opens `/setup` and chooses their own email and password. Each code expires in 24 hours and works once. Generate a separate code for each editor. No email is sent automatically.
+For a deployed app, run this on the Docker host using its running app container:
+
+```sh
+docker ps --filter label=service=vccmenu --filter label=role=web
+docker exec <container-id> /app task invite-editor
+```
+
+Give the code privately to an editor, who opens `/setup` and chooses their own email and password. Each code expires in 24 hours and works once. Generate a separate code for each editor. No email is sent automatically.
 
 Gantry manages hashed passwords, server-side sessions, sign-in rate limits and cross-origin form protection. An unused sign-in expires after 30 days; every sign-in expires after 90 days. Email-based password recovery is not configured.
 
 ## Houston deployment
 
-`compose.yml` declares the persistent `data` volume and `/up` health check. Link this GitHub repository in Houston, add its read-only deploy key, then deploy. Houston supplies HTTPS and persistent volume storage. Do not remove the data volume when updating the app.
+`compose.yml` declares the persistent `data` volume and `/up` health check. The `vccmenu` project has been linked to `github.com/scttymn/vccmenu`, with a read-only deploy key and a push webhook. Its default address is `https://vccmenu.svnmns.com`. Houston supplies HTTPS and persistent volume storage. Do not remove the data volume when updating the app.
 
 ```sh
 bin/gantry deploy --server --follow
