@@ -94,6 +94,9 @@ func dbCommand(ctx context.Context, cfg config.Config, args []string, in io.Read
 				if err := seeds.Run(ctx, d); err != nil {
 					return err
 				}
+				if err := seeds.Development(ctx, d, cfg.Env); err != nil {
+					return err
+				}
 			default:
 				return fmt.Errorf("no db command %q", args[0])
 			}

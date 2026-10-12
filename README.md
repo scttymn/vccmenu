@@ -21,9 +21,13 @@ bin/gantry test
 
 The app is at `http://vccmenu.localhost`. SQLite lives in the `data` volume; migrations and initial menu seeding run at startup. Seeding inserts only into an empty database and never replaces saved edits.
 
+In development, startup and `bin/gantry db seed` also create the local editor account **admin@example.com** with password **Password1!**. This account is created only when `GANTRY_ENV=development`; seeding never resets its password or replaces existing users. Production and test environments do not create this account.
+
+Gantry Strict runs source checks when `bin/gantry dev` starts. Its router automatically injects a bottom warning panel into development pages when findings exist; no page-specific integration is needed. Run `bin/gantry check --strict` for the full check result. To hide the panel, set `GANTRY_DEV_WARNINGS=false` and restart development. Production never shows it.
+
 ## Editor accounts
 
-There is no public registration or hard-coded password. For the first admin account, set `ADMIN_EMAIL` and `ADMIN_PASSWORD` through Houston secrets before deploying. Startup creates the account only when no users exist; it never resets an existing password. These bootstrap secrets can be removed after account creation.
+There is no public registration or default production password. For the first production admin account, set `ADMIN_EMAIL` and `ADMIN_PASSWORD` through Houston secrets before deploying. Startup creates the account only when no users exist; it never resets an existing password. These bootstrap secrets can be removed after account creation.
 
 Once signed in, open **Users** in Menu Manager to add an account with an email and starting password. Every account has full access to edit the menu and add users. Share the starting password privately; the new user can change it using **Password**. No invitation email is sent.
 
