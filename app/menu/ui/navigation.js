@@ -1,7 +1,7 @@
 (function () {
   var header = document.querySelector('.masthead');
   var toggle = header.querySelector('.nav-toggle');
-  var mobile = window.matchMedia('(max-width: 720px)');
+  var mobile = window.matchMedia('(max-width: 850px)');
   function close() {
     header.classList.remove('nav-open');
     toggle.setAttribute('aria-expanded', 'false');

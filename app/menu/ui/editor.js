@@ -46,7 +46,7 @@
     var sections = document.getElementById('sections'); sections.textContent = '';
     menu.sections.forEach(function (section, index) {
       var card = document.getElementById('section-template').content.firstElementChild.cloneNode(true);
-      card.open = index === 0;
+      card.open = false;
       card.querySelector('h2').textContent = section.name;
       card.querySelector('.section-number').textContent = '0' + (index + 1);
       card.querySelectorAll('[data-section]').forEach(function (input) {
@@ -97,5 +97,6 @@
     finally {saving = false; form.classList.remove('saving');}
   };
   window.addEventListener('beforeunload', function (e) {if(dirty){e.preventDefault();e.returnValue='';}});
-  load();
+  var initial = document.getElementById('initial-menu');
+  if (initial) { menu = JSON.parse(initial.textContent); draw(); } else { load(); }
 }());
