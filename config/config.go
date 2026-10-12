@@ -14,7 +14,9 @@ type Config struct {
 	// JobsInServer runs the background jobs in the server's process (Rails 8's
 	// Solid Queue in Puma). JOBS_IN_SERVER=false leaves them to a process of
 	// their own, `vccmenu jobs`.
-	JobsInServer bool
+	JobsInServer  bool
+	AdminEmail    string // optional first-admin bootstrap, supplied through Houston
+	AdminPassword string
 }
 
 // Development is true where the code is mounted and changes as you work:
@@ -30,11 +32,13 @@ func Load(getenv func(string) string) Config {
 		return fallback
 	}
 	c := Config{
-		Env:          or("GANTRY_ENV", "production"),
-		Addr:         or("ADDR", ":8080"),
-		DataDir:      or("DATA_DIR", "/data"),
-		SecretKey:    getenv("SECRET_KEY"),
-		JobsInServer: getenv("JOBS_IN_SERVER") != "false",
+		Env:           or("GANTRY_ENV", "production"),
+		Addr:          or("ADDR", ":8080"),
+		DataDir:       or("DATA_DIR", "/data"),
+		SecretKey:     getenv("SECRET_KEY"),
+		AdminEmail:    getenv("ADMIN_EMAIL"),
+		AdminPassword: getenv("ADMIN_PASSWORD"),
+		JobsInServer:  getenv("JOBS_IN_SERVER") != "false",
 	}
 	c.DatabaseURL = or("DATABASE_URL", "sqlite://"+c.DataDir+"/vccmenu.sqlite3")
 	return c

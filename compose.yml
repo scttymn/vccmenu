@@ -9,6 +9,8 @@ services:
     expose: ["8080"]
     environment:
       SECRET_KEY: ${SECRET_KEY:-}   # signs cookies and forms; blank: a key kept in the database
+      ADMIN_EMAIL: ${ADMIN_EMAIL:-}
+      ADMIN_PASSWORD: ${ADMIN_PASSWORD:-}
     volumes:
       - .:/app                     # the code, rebuilt on change
       - data:/data                 # the SQLite database and uploads

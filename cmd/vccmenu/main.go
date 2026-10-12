@@ -112,6 +112,9 @@ func build(ctx context.Context, cfg config.Config, logger *slog.Logger) (a *app.
 	if err := seeds.Run(ctx, database); err != nil {
 		return nil, nil, err
 	}
+	if err := seeds.EnsureAdmin(ctx, database, cfg.AdminEmail, cfg.AdminPassword); err != nil {
+		return nil, nil, err
+	}
 	key, err := sign.Key(ctx, database, cfg.SecretKey)
 	if err != nil {
 		return nil, nil, err

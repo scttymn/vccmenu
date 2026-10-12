@@ -23,7 +23,9 @@ The app is at `http://vccmenu.localhost`. SQLite lives in the `data` volume; mig
 
 ## Editor accounts
 
-There is no public registration and no default password. Generate a one-use setup code:
+There is no public registration or hard-coded password. For the first admin account, set `ADMIN_EMAIL` and `ADMIN_PASSWORD` through Houston secrets before deploying. Startup creates the account only when no users exist; it never resets an existing password. These bootstrap secrets can be removed after account creation.
+
+To add more editors, generate a one-use setup code:
 
 ```sh
 bin/gantry task invite-editor
