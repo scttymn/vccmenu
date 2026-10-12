@@ -40,7 +40,7 @@ docker exec <container-id> /app task invite-editor
 
 Give the code privately to an editor, who opens `/setup` and chooses their own email and password. Each code expires in 24 hours and works once. Generate a separate code for each editor. No email is sent automatically.
 
-Gantry manages hashed passwords, server-side sessions, sign-in rate limits and cross-origin form protection. An unused sign-in expires after 30 days; every sign-in expires after 90 days. Email-based password recovery is not configured.
+Gantry manages hashed passwords, server-side sessions, sign-in rate limits and cross-origin form protection. An unused sign-in expires after 30 days; every sign-in expires after 90 days. Use **Password** in the editor to change your password; this signs out existing sessions. Email-based password recovery is not configured.
 
 ## Houston deployment
 

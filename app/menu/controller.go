@@ -144,3 +144,30 @@ func (c Controller) CreateEditor(w http.ResponseWriter, r *http.Request) error {
 	http.Redirect(w, r, "/login", http.StatusSeeOther)
 	return nil
 }
+
+func (c Controller) Password(w http.ResponseWriter, r *http.Request) error {
+	return page(w, "password.html", nil)
+}
+
+func (c Controller) ChangePassword(w http.ResponseWriter, r *http.Request) error {
+	user, ok := auth.Current(r)
+	if !ok {
+		return web.Status(401, errors.New("Please sign in again."))
+	}
+	if !c.Auth.Limits.Allow("change-password:"+web.IDText(user.ID), 10, 3*time.Minute, time.Now()) {
+		return web.Status(429, errors.New("Please wait a few minutes before trying again."))
+	}
+	if _, ok := c.Auth.Authenticate(r.Context(), user.EmailAddress, r.PostFormValue("current_password")); !ok {
+		return web.Status(422, errors.New("The current password is incorrect."))
+	}
+	password := r.PostFormValue("password")
+	if problems := auth.DefaultRules(password, r.PostFormValue("confirmation")); len(problems) > 0 {
+		return web.Status(422, errors.New(strings.Join(problems, ". ")))
+	}
+	if err := c.Auth.SetPassword(r.Context(), user.ID, password); err != nil {
+		return err
+	}
+	web.ClearCookie(w, "session")
+	http.Redirect(w, r, "/login", http.StatusSeeOther)
+	return nil
+}

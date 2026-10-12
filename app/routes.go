@@ -51,6 +51,8 @@ func (a *App) Handler() http.Handler {
 		s.Handle("GET /{$}", c.Editor)
 		s.Handle("GET /menu", c.Read)
 		s.Handle("PUT /menu", c.Save)
+		s.Handle("GET /password", c.Password)
+		s.Handle("POST /password", c.ChangePassword)
 	})
 
 	// The pages' live streams: put it behind the filters that decide who

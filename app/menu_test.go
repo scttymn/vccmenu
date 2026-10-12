@@ -132,3 +132,49 @@ func TestInvitationIsRequiredAndSingleUse(t *testing.T) {
 		t.Fatal("new editor cannot sign in")
 	}
 }
+
+func TestPasswordChangeRequiresCurrentPasswordAndEndsSessions(t *testing.T) {
+	a := newApp(t)
+	h := a.Handler()
+	login := auth.Auth{DB: a.DB, Signer: a.Signer}
+	u, err := login.CreateUser(t.Context(), "password-test@example.com", "original-password")
+	if err != nil {
+		t.Fatal(err)
+	}
+	session := httptest.NewRecorder()
+	if _, err := login.StartSession(session, httptest.NewRequest("GET", "/", nil), u); err != nil {
+		t.Fatal(err)
+	}
+	cookie := session.Result().Cookies()[0]
+	change := func(current string) *httptest.ResponseRecorder {
+		values := url.Values{"current_password": {current}, "password": {"new-test-password"}, "confirmation": {"new-test-password"}}
+		r := httptest.NewRequest("POST", "/admin/password", strings.NewReader(values.Encode()))
+		r.Header.Set("Content-Type", "application/x-www-form-urlencoded")
+		r.Header.Set("Accept", "application/json")
+		r.AddCookie(cookie)
+		w := httptest.NewRecorder()
+		h.ServeHTTP(w, r)
+		return w
+	}
+	if w := change("incorrect"); w.Code != 422 {
+		t.Fatalf("incorrect current password: %d", w.Code)
+	}
+	if w := change("original-password"); w.Code != 303 {
+		t.Fatalf("change failed: %d %s", w.Code, w.Body)
+	}
+	if _, ok := login.Authenticate(t.Context(), u.EmailAddress, "original-password"); ok {
+		t.Fatal("old password still works")
+	}
+	if _, ok := login.Authenticate(t.Context(), u.EmailAddress, "new-test-password"); !ok {
+		t.Fatal("new password does not work")
+	}
+	if w := call(h, "GET", "/admin/menu", "", cookie, ""); w.Code != 302 {
+		t.Fatal("old session still works")
+	}
+	if err := seeds.EnsureAdmin(t.Context(), a.DB, u.EmailAddress, "original-password"); err != nil {
+		t.Fatal(err)
+	}
+	if _, ok := login.Authenticate(t.Context(), u.EmailAddress, "new-test-password"); !ok {
+		t.Fatal("bootstrap reset changed password")
+	}
+}
