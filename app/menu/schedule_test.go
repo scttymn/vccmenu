@@ -1,6 +1,7 @@
 package menu_test
 
 import (
+	"bytes"
 	"encoding/json"
 	"testing"
 	"time"
@@ -350,6 +351,137 @@ func TestWindowConstructorsRejectEmptyRanges(t *testing.T) {
 	}
 	if _, err := menu.OneOff(date(t, "2026-10-06"), date(t, "2026-10-05"), clock(t, "00:00"), clock(t, "24:00")); err == nil {
 		t.Fatal("backwards dates")
+	}
+}
+
+func spanAt(t *testing.T, snap menu.Snapshot, at time.Time) (menu.Span, menu.Span) {
+	t.Helper()
+	for i, span := range snap.Timeline {
+		if !at.Before(span.Start) && at.Before(span.End) {
+			var next menu.Span
+			if i+1 < len(snap.Timeline) {
+				next = snap.Timeline[i+1]
+			}
+			return span, next
+		}
+	}
+	t.Fatalf("no span contains %s", at.Format(time.RFC3339))
+	return menu.Span{}, menu.Span{}
+}
+
+func assertContinuous(t *testing.T, snap menu.Snapshot, loc *time.Location, now time.Time) {
+	t.Helper()
+	if len(snap.Timeline) == 0 {
+		t.Fatal("empty timeline")
+	}
+	year, month, day := now.In(loc).Date()
+	horizon := time.Date(year, month, day, 0, 0, 0, 0, loc).AddDate(0, 0, 8)
+	last := snap.Timeline[len(snap.Timeline)-1]
+	if !last.End.Equal(horizon) {
+		t.Fatalf("last span ends %s, horizon %s", last.End.Format(time.RFC3339), horizon.Format(time.RFC3339))
+	}
+	for i := 1; i < len(snap.Timeline); i++ {
+		if !snap.Timeline[i].Start.Equal(snap.Timeline[i-1].End) {
+			t.Fatalf("timeline gap between %s and %s", snap.Timeline[i-1].End.Format(time.RFC3339), snap.Timeline[i].Start.Format(time.RFC3339))
+		}
+	}
+}
+
+func TestProjectBoundaryAndIdleRail(t *testing.T) {
+	board := mondayBoard(t)
+	board.AllDay.Sections[0].Items = append(board.AllDay.Sections[0].Items, menu.Item{Name: "Americano", Price: "$3", Visible: false})
+	board.Dayparts[0].Sections[0].Items = []menu.Item{{Name: "Secret Scone", Price: "$1", Visible: true}}
+	board.Dayparts[0].Specials = []menu.Combo{
+		{Number: 2, Name: "Second", Contents: "Muffin", Price: "$2"},
+		{Number: 1, Name: "Sunrise", Contents: "Drip coffee and a muffin", Price: "$6"},
+	}
+	at := chicagoAt(board.Zone, 2026, 10, 5, 10, 29, 0)
+	snap, err := board.Project(at)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if !snap.ServerNow.Equal(at.UTC()) {
+		t.Fatalf("serverNow %s", snap.ServerNow.Format(time.RFC3339))
+	}
+	assertContinuous(t, snap, board.Zone.Location(), at)
+	span, next := spanAt(t, snap, chicagoAt(board.Zone, 2026, 10, 5, 10, 29, 59))
+	boundary := chicagoAt(board.Zone, 2026, 10, 5, 10, 30, 0)
+	if !span.End.Equal(boundary) || span.Panel == nil || span.Panel.Name != "Breakfast" || len(span.Panel.Combos) != 2 || span.Panel.Combos[0].Number != 1 || span.Panel.Combos[0].Price != "$6" || span.Panel.Combos[1].Price != "$2" {
+		t.Fatalf("breakfast span ends %s panel %+v", span.End.Format(time.RFC3339), span.Panel)
+	}
+	if !next.Start.Equal(boundary) || next.Panel == nil || next.Panel.Name != "Lunch" || next.Panel.Combos[0].Price != "$8" {
+		t.Fatalf("lunch span starts %s panel %+v", next.Start.Format(time.RFC3339), next.Panel)
+	}
+	if len(snap.Left[0].Items) != 1 || snap.Left[0].Items[0].Name != "Drip" || snap.Left[0].Items[0].Price != "$3" {
+		t.Fatalf("left items %+v", snap.Left[0].Items)
+	}
+	raw, err := json.Marshal(snap)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if bytes.Contains(raw, []byte("Secret Scone")) || bytes.Contains(raw, []byte("Americano")) {
+		t.Fatal("hidden item or daypart section leaked onto the snapshot")
+	}
+
+	board.Dayparts[1].Specials = nil
+	noon := chicagoAt(board.Zone, 2026, 10, 5, 12, 0, 0)
+	idle, err := board.Project(noon)
+	if err != nil {
+		t.Fatal(err)
+	}
+	gap, _ := spanAt(t, idle, noon)
+	if gap.Panel == nil || gap.Panel.Name != "All day" || gap.Panel.Combos[0].Name != "House" || gap.Panel.Combos[0].Price != "$4" {
+		t.Fatalf("empty lunch cleared the rail: %+v", gap.Panel)
+	}
+
+	sunday := chicagoAt(board.Zone, 2026, 10, 4, 7, 0, 0)
+	off, err := board.Project(sunday)
+	if err != nil {
+		t.Fatal(err)
+	}
+	offSpan, _ := spanAt(t, off, sunday)
+	if offSpan.Panel == nil || offSpan.Panel.Name != "All day" || offSpan.Panel.Combos[0].Price != "$4" {
+		t.Fatalf("sunday rail %+v", offSpan.Panel)
+	}
+}
+
+func TestProjectRepeatedHour(t *testing.T) {
+	z := zone(t)
+	board := menu.Board{
+		Zone: z,
+		AllDay: menu.MenuBody{
+			ID: "all-day", Name: "All day", Sections: namedSections("Drinks"),
+			Specials: []menu.Combo{combo(1, "House", "$4")},
+		},
+		Dayparts: []menu.Daypart{
+			daypart("early", "Early", "$3", weekly(t, []time.Weekday{time.Sunday}, "01:30", "01:45")),
+		},
+	}
+	now := chicagoAt(z, 2026, 11, 1, 0, 30, 0)
+	snap, err := board.Project(now)
+	if err != nil {
+		t.Fatal(err)
+	}
+	assertContinuous(t, snap, z.Location(), now)
+	cutoff := chicagoAt(z, 2026, 11, 1, 3, 0, 0)
+	var morning []menu.Span
+	for _, span := range snap.Timeline {
+		if span.Panel != nil && span.Panel.Name == "Early" && span.Start.Before(cutoff) {
+			morning = append(morning, span)
+		}
+	}
+	if len(morning) != 2 || !morning[0].End.Before(morning[1].Start) || morning[0].Panel.Combos[0].Price != "$3" {
+		t.Fatalf("morning spans %d", len(morning))
+	}
+	between, _ := spanAt(t, snap, morning[0].End)
+	if between.Panel == nil || between.Panel.Name != "All day" || between.Panel.Combos[0].Price != "$4" {
+		t.Fatalf("gap between the repeated hour %+v", between.Panel)
+	}
+}
+
+func TestProjectRequiresZone(t *testing.T) {
+	if _, err := (menu.Board{}).Project(time.Now()); err == nil {
+		t.Fatal("missing zone projected a timeline")
 	}
 }
 

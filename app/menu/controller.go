@@ -43,12 +43,9 @@ func (c Controller) Public(w http.ResponseWriter, r *http.Request) error {
 	if err != nil {
 		return err
 	}
-	snap := Snapshot{
-		Brand:     board.Brand,
-		Title:     board.Title,
-		ServerNow: time.Now().UTC(),
-		Left:      visibleSections(board.AllDay.Sections),
-		Timeline:  []Span{},
+	snap, err := board.Project(time.Now())
+	if err != nil {
+		return err
 	}
 	return respond(w, snap)
 }

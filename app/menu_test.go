@@ -155,6 +155,41 @@ func menuJSON(t *testing.T, board menu.Board, when map[string]any) string {
 	}
 	return string(out)
 }
+func TestPublicMenuIsATimeline(t *testing.T) {
+	a := newApp(t)
+	w := call(a.Handler(), "GET", "/api/menu", "", nil, "")
+	if w.Code != 200 {
+		t.Fatalf("public menu: %d %s", w.Code, w.Body)
+	}
+	var snap struct {
+		ServerNow string `json:"serverNow"`
+		Left      []struct {
+			Name  string `json:"name"`
+			Items []struct {
+				Name  string `json:"name"`
+				Price string `json:"price"`
+			} `json:"items"`
+		} `json:"left"`
+		Timeline []struct {
+			Start string `json:"start"`
+			End   string `json:"end"`
+			Panel any    `json:"panel"`
+		} `json:"timeline"`
+	}
+	if err := json.Unmarshal(w.Body.Bytes(), &snap); err != nil {
+		t.Fatal(err)
+	}
+	if _, err := time.Parse(time.RFC3339, snap.ServerNow); err != nil {
+		t.Fatal(err)
+	}
+	if len(snap.Timeline) == 0 || snap.Timeline[0].Panel != nil {
+		t.Fatalf("timeline %+v", snap.Timeline)
+	}
+	if len(snap.Left) != 3 || snap.Left[0].Name != "Drinks" || len(snap.Left[0].Items) == 0 || snap.Left[0].Items[0].Name != "Latte" || snap.Left[0].Items[0].Price != "$5.5 / $6 / $6.5" {
+		t.Fatalf("left %+v", snap.Left[0])
+	}
+}
+
 func TestInvitationIsRequiredAndSingleUse(t *testing.T) {
 	a := newApp(t)
 	h := a.Handler()

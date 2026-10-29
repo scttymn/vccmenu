@@ -3,7 +3,9 @@ package menu
 import (
 	"crypto/rand"
 	"encoding/hex"
+	"errors"
 	"fmt"
+	"sort"
 	"time"
 
 	// Hosts and go test have no zoneinfo file unless the binary is built
@@ -362,6 +364,68 @@ func containsInstant(list []time.Time, instant time.Time) bool {
 func shiftDate(y int, m time.Month, d, days int) (int, time.Month, int) {
 	t := time.Date(y, m, d, 12, 0, 0, 0, time.UTC).AddDate(0, 0, days)
 	return t.Date()
+}
+
+func (b Board) Project(now time.Time) (Snapshot, error) {
+	loc := b.Zone.Location()
+	if loc == nil {
+		return Snapshot{}, errors.New("Choose a timezone.")
+	}
+	local := now.In(loc)
+	start := local.Truncate(time.Minute).Add(-2 * time.Minute)
+	year, month, day := local.Date()
+	horizon := time.Date(year, month, day, 0, 0, 0, 0, loc).AddDate(0, 0, 8)
+	snap := Snapshot{
+		Brand:     b.Brand,
+		Title:     b.Title,
+		ServerNow: now.UTC(),
+		Left:      visibleSections(b.AllDay.Sections),
+		Timeline:  make([]Span, 0, 8),
+	}
+	// Step real minutes. Jumping from one civil 1:30 to the next skips the
+	// second fall-back hour, which is still 1:30 an hour later.
+	var current *Span
+	var currentKey string
+	for at := start; at.Before(horizon); at = at.Add(time.Minute) {
+		panel, key := b.rail(at)
+		if current != nil && key == currentKey {
+			continue
+		}
+		if current != nil {
+			current.End = at.UTC()
+			snap.Timeline = append(snap.Timeline, *current)
+		}
+		current = &Span{Start: at.UTC(), Panel: panel}
+		currentKey = key
+	}
+	if current == nil {
+		panel, _ := b.rail(start)
+		snap.Timeline = append(snap.Timeline, Span{Start: start.UTC(), End: horizon.UTC(), Panel: panel})
+		return snap, nil
+	}
+	current.End = horizon.UTC()
+	snap.Timeline = append(snap.Timeline, *current)
+	return snap, nil
+}
+
+func (b Board) rail(at time.Time) (*Panel, string) {
+	if id, ok := b.Active(at); ok {
+		for _, daypart := range b.Dayparts {
+			if daypart.ID == id {
+				return panelFrom(daypart.Name, daypart.Specials), "daypart:" + string(id)
+			}
+		}
+	}
+	if len(b.AllDay.Specials) == 0 {
+		return nil, "none"
+	}
+	return panelFrom(b.AllDay.Name, b.AllDay.Specials), "allday"
+}
+
+func panelFrom(name string, combos []Combo) *Panel {
+	copied := append([]Combo(nil), combos...)
+	sort.SliceStable(copied, func(i, j int) bool { return copied[i].Number < copied[j].Number })
+	return &Panel{Name: name, Combos: copied}
 }
 
 func visibleSections(in [3]Section) [3]Section {
