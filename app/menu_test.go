@@ -55,9 +55,9 @@ func TestEditingAndPersistence(t *testing.T) {
 		t.Fatal(err)
 	}
 	initialRevision := m.Revision
-	m.Sections[0].Name = "Coffee & Tea"
-	m.Sections[0].Items[0].Price = "$9"
-	m.Sections[0].Items[1].Visible = false
+	m.AllDay.Sections[0].Name = "Coffee & Tea"
+	m.AllDay.Sections[0].Items[0].Price = "$9"
+	m.AllDay.Sections[0].Items[1].Visible = false
 	b, _ := json.Marshal(m)
 	w = call(h, "PUT", "/admin/menu", string(b), cookie, "https://evil.example")
 	if w.Code != 422 {
@@ -78,20 +78,32 @@ func TestEditingAndPersistence(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	if saved.Sections[0].Items[0].Price != "$9" || saved.Revision != initialRevision+1 {
+	if saved.AllDay.Sections[0].Items[0].Price != "$9" || saved.Revision != initialRevision+1 {
 		t.Fatal("seed replaced saved edits")
 	}
 	pub := call(h, "GET", "/api/menu", "", nil, "")
 	if pub.Code != 200 || bytes.Contains(pub.Body.Bytes(), []byte("Americano")) {
 		t.Fatalf("hidden item leaked: %d %s", pub.Code, pub.Body)
 	}
-	if !strings.Contains(pub.Body.String(), "Coffee ") {
-		t.Fatal("renamed section missing from TV data")
+	var snap struct {
+		Left []struct {
+			Name  string `json:"name"`
+			Items []struct {
+				Name  string `json:"name"`
+				Price string `json:"price"`
+			} `json:"items"`
+		} `json:"left"`
+	}
+	if err := json.Unmarshal(pub.Body.Bytes(), &snap); err != nil {
+		t.Fatal(err)
+	}
+	if len(snap.Left) != 3 || snap.Left[0].Name != "Coffee & Tea" || len(snap.Left[0].Items) == 0 || snap.Left[0].Items[0].Price != "$9" {
+		t.Fatalf("renamed section missing from TV data: %s", pub.Body)
 	}
 	if pub.Header().Get("Access-Control-Allow-Origin") != "" {
 		t.Fatal("obsolete GitHub Pages origin is still allowed")
 	}
-	saved.Sections[0].Items[0].Name = ""
+	saved.AllDay.Sections[0].Items[0].Name = ""
 	bad, _ := json.Marshal(saved)
 	if w := call(h, "PUT", "/admin/menu", string(bad), cookie, ""); w.Code != 422 {
 		t.Fatalf("invalid save: %d", w.Code)
@@ -100,6 +112,48 @@ func TestEditingAndPersistence(t *testing.T) {
 	if after.Revision != saved.Revision {
 		t.Fatal("invalid input wrote data")
 	}
+	if w := call(h, "PUT", "/admin/menu", string(menu.Initial), cookie, ""); w.Code != 400 {
+		t.Fatalf("legacy save: %d %s", w.Code, w.Body)
+	}
+	if kept, err := menu.Load(t.Context(), a.DB); err != nil || kept.Revision != after.Revision || kept.AllDay.Sections[0].Items[0].Price != "$9" {
+		t.Fatal("legacy body wrote data")
+	}
+	emptyDays := menuJSON(t, after, map[string]any{
+		"kind": "weekly", "days": []any{}, "start": "06:00", "end": "10:00",
+	})
+	if w := call(h, "PUT", "/admin/menu", emptyDays, cookie, ""); w.Code != 422 {
+		t.Fatalf("empty week: %d %s", w.Code, w.Body)
+	}
+	badClock := menuJSON(t, after, map[string]any{
+		"kind": "weekly", "days": []any{"mon"}, "start": "25:00", "end": "10:00",
+	})
+	if w := call(h, "PUT", "/admin/menu", badClock, cookie, ""); w.Code != 400 {
+		t.Fatalf("bad clock: %d %s", w.Code, w.Body)
+	}
+}
+
+func menuJSON(t *testing.T, board menu.Board, when map[string]any) string {
+	t.Helper()
+	raw, err := json.Marshal(board)
+	if err != nil {
+		t.Fatal(err)
+	}
+	var doc map[string]any
+	if err := json.Unmarshal(raw, &doc); err != nil {
+		t.Fatal(err)
+	}
+	doc["dayparts"] = []any{map[string]any{
+		"id":       "breakfast",
+		"name":     "Breakfast",
+		"sections": board.AllDay.Sections,
+		"specials": []any{map[string]any{"number": 1, "name": "Sunrise", "contents": "Coffee and a muffin", "price": "$6"}},
+		"when":     when,
+	}}
+	out, err := json.Marshal(doc)
+	if err != nil {
+		t.Fatal(err)
+	}
+	return string(out)
 }
 func TestInvitationIsRequiredAndSingleUse(t *testing.T) {
 	a := newApp(t)

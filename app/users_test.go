@@ -87,7 +87,7 @@ func TestAnySignedInUserCanAddUsersWithFullAccess(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	m.Sections[0].Name = "Coffee"
+	m.AllDay.Sections[0].Name = "Coffee"
 	body, _ := json.Marshal(m)
 	if w := call(h, "PUT", "/admin/menu", string(body), second, ""); w.Code != 200 {
 		t.Fatalf("new user cannot edit: %d", w.Code)

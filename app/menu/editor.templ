@@ -3,7 +3,7 @@ package menu
 import "github.com/scttymn/vccmenu/app/shared/layout"
 import "github.com/scttymn/vccmenu/assets"
 
-templ editor(m Menu) {
+templ editor(m Board) {
 	@layout.Layout(layout.Page{Title: "Edit menu · Valley Coffee Co", Styles: assets.EditorStyles, Scripts: []string{"editor.js", "navigation.js"}, NoIndex: true}) {
 		<main class="editor">
 			@layout.Navigation("menu")

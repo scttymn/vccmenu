@@ -10,7 +10,7 @@ import (
 )
 
 func TestInitialMenuEscapesScriptContent(t *testing.T) {
-	m := Menu{Brand: "</script><script>alert(1)</script>"}
+	m := Board{Brand: "</script><script>alert(1)</script>"}
 	w := httptest.NewRecorder()
 	if err := page(w, httptest.NewRequest("GET", "/admin/", nil), 200, editor(m)); err != nil {
 		t.Fatal(err)
@@ -22,7 +22,7 @@ func TestInitialMenuEscapesScriptContent(t *testing.T) {
 		t.Fatal("missing initial data")
 	}
 	data, _, _ = strings.Cut(data, "</script>")
-	var got Menu
+	var got Board
 	if err := json.Unmarshal([]byte(data), &got); err != nil {
 		t.Fatal(err)
 	}
