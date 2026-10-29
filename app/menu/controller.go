@@ -3,6 +3,7 @@ package menu
 import (
 	"encoding/json"
 	"errors"
+	"io"
 	"net/http"
 	"net/mail"
 	"strings"
@@ -38,20 +39,15 @@ func (c Controller) Login(w http.ResponseWriter, r *http.Request, p auth.Page) e
 	return page(w, r, http.StatusOK, login(p))
 }
 func (c Controller) Public(w http.ResponseWriter, r *http.Request) error {
-	m, err := Load(r.Context(), c.DB)
+	board, err := Load(r.Context(), c.DB)
 	if err != nil {
 		return err
 	}
-	for k := range m.Sections {
-		visible := make([]Item, 0)
-		for _, item := range m.Sections[k].Items {
-			if item.Visible {
-				visible = append(visible, item)
-			}
-		}
-		m.Sections[k].Items = visible
+	snap, err := board.Project(time.Now())
+	if err != nil {
+		return err
 	}
-	return respond(w, m)
+	return respond(w, snap)
 }
 func (c Controller) Read(w http.ResponseWriter, r *http.Request) error {
 	m, err := Load(r.Context(), c.DB)
@@ -66,23 +62,68 @@ func respond(w http.ResponseWriter, v any) error {
 	return json.NewEncoder(w).Encode(v)
 }
 func (c Controller) Save(w http.ResponseWriter, r *http.Request) error {
-	var m Menu
-	dec := json.NewDecoder(http.MaxBytesReader(w, r.Body, 64<<10))
-	dec.DisallowUnknownFields()
-	if err := dec.Decode(&m); err != nil {
+	raw, err := readDocument(w, r)
+	if err != nil {
 		return web.Status(400, errors.New("The menu could not be read."))
 	}
-	if err := m.Validate(); err != nil {
+	board, err := ParseEditor(raw)
+	if err != nil {
+		return parseStatus(err)
+	}
+	if err := board.ensureIDs(); err != nil {
+		return err
+	}
+	if err := board.Validate(); err != nil {
 		return web.Status(422, err)
 	}
-	if err := Save(r.Context(), c.DB, m); err != nil {
+	if err := Save(r.Context(), c.DB, board); err != nil {
 		if errors.Is(err, ErrConflict) {
 			return web.Status(409, err)
 		}
 		return err
 	}
-	m.Revision++
-	return respond(w, m)
+	board.Revision++
+	return respond(w, board)
+}
+
+func (c Controller) Copy(w http.ResponseWriter, r *http.Request) error {
+	raw, err := readDocument(w, r)
+	if err != nil {
+		return web.Status(400, errors.New("The menu could not be read."))
+	}
+	var req struct {
+		Board json.RawMessage `json:"board"`
+		From  MenuID          `json:"from"`
+		Name  string          `json:"name"`
+		When  When            `json:"when"`
+	}
+	if err := decodeStrict(raw, &req); err != nil {
+		return parseStatus(err)
+	}
+	board, err := ParseEditor(req.Board)
+	if err != nil {
+		return parseStatus(err)
+	}
+	next, _, err := board.Copy(req.From, req.Name, req.When)
+	if err != nil {
+		return web.Status(422, err)
+	}
+	if err := next.Validate(); err != nil {
+		return web.Status(422, err)
+	}
+	return respond(w, next)
+}
+
+func readDocument(w http.ResponseWriter, r *http.Request) ([]byte, error) {
+	return io.ReadAll(http.MaxBytesReader(w, r.Body, maxDocument))
+}
+
+func parseStatus(err error) error {
+	var read readError
+	if errors.As(err, &read) {
+		return web.Status(400, errors.New("The menu could not be read."))
+	}
+	return web.Status(422, err)
 }
 func (c Controller) Setup(w http.ResponseWriter, r *http.Request) error {
 	w.Header().Set("Referrer-Policy", "no-referrer")

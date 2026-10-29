@@ -50,6 +50,7 @@ func (a *App) Handler() http.Handler {
 		s.Handle("GET /{$}", c.Editor)
 		s.Handle("GET /menu", c.Read)
 		s.Handle("PUT /menu", c.Save)
+		s.Handle("POST /menu/copy", c.Copy)
 		s.Handle("GET /password", c.Password)
 		s.Handle("POST /password", c.ChangePassword)
 		s.Handle("GET /users", c.Users)

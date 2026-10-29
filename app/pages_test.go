@@ -54,6 +54,57 @@ func TestMenuPagesAndAssetLinks(t *testing.T) {
 	}
 }
 
+func TestEditorUsesClockInputs(t *testing.T) {
+	a := newApp(t)
+	h := a.Handler()
+	script := get(t, h, assets.Path("editor.js"))
+	body := script.Body.String()
+	if script.Code != http.StatusOK || !strings.Contains(body, "type = 'time'") || !strings.Contains(body, "type = 'date'") || strings.Contains(body, "datetime-local") {
+		t.Fatalf("editor inputs: %d", script.Code)
+	}
+	if !strings.Contains(body, "/admin/menu/copy") || !strings.Contains(body, "Always on the left") {
+		t.Fatal("editor cannot add or copy a scheduled menu")
+	}
+	login := auth.Auth{DB: a.DB, Signer: a.Signer}
+	user, err := login.CreateUser(t.Context(), "editor-page@example.com", "test-password-123")
+	if err != nil {
+		t.Fatal(err)
+	}
+	session := httptest.NewRecorder()
+	if _, err := login.StartSession(session, httptest.NewRequest("GET", "/", nil), user); err != nil {
+		t.Fatal(err)
+	}
+	page := httptest.NewRequest("GET", "/admin/", nil)
+	page.Header.Set("Accept", "text/html")
+	page.AddCookie(session.Result().Cookies()[0])
+	w := httptest.NewRecorder()
+	h.ServeHTTP(w, page)
+	html := w.Body.String()
+	if w.Code != http.StatusOK || !strings.Contains(html, `id="new-menu"`) || !strings.Contains(html, `id="copy-menu"`) || !strings.Contains(html, `id="timezone"`) || strings.Contains(html, "datetime-local") {
+		t.Fatalf("editor page: %d", w.Code)
+	}
+}
+
+func TestDisplayFollowsTheTimeline(t *testing.T) {
+	h := handler(t)
+	script := get(t, h, assets.Path("display.js"))
+	body := script.Body.String()
+	if script.Code != http.StatusOK || !strings.Contains(body, "vcc-board-v2:/api/menu") || !strings.Contains(body, "vcc-menu-v1:/api/menu") {
+		t.Fatalf("display cache: %d", script.Code)
+	}
+	if !strings.Contains(body, "serverNow") || !strings.Contains(body, "fetchedAt") || !strings.Contains(body, "ORDER BY NUMBER") || !strings.Contains(body, "60000") || !strings.Contains(body, "get('at')") {
+		t.Fatal("display does not follow the cached timeline")
+	}
+	if strings.Contains(body, "datetime-local") || strings.Contains(body, "monday") {
+		t.Fatal("display interprets the schedule itself")
+	}
+	page := get(t, h, "/")
+	html := page.Body.String()
+	if page.Code != http.StatusOK || !strings.Contains(html, `id="columns"`) || !strings.Contains(html, `id="rail"`) {
+		t.Fatalf("display page: %d", page.Code)
+	}
+}
+
 func TestMenuAssetsUseGantryCaching(t *testing.T) {
 	h := handler(t)
 	for _, name := range []string{"display.css", "editor.css", "display.js", "editor.js", "navigation.js", "password.js", "setup.js"} {
