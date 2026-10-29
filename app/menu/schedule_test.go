@@ -479,6 +479,86 @@ func TestProjectRepeatedHour(t *testing.T) {
 	}
 }
 
+func TestCopyIsIndependent(t *testing.T) {
+	board := mondayBoard(t)
+	board.AllDay.Sections[0].Items[0].Price = "$5"
+	board.AllDay.Sections[2].Extras = []string{"Sprinkles"}
+	board.AllDay.Specials[0].Price = "$4"
+	when := oneOff(t, "2026-10-09", "2026-10-09", "16:00", "20:00")
+	next, id, err := board.Copy(board.AllDay.ID, "Friday market", when)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if next.Revision != board.Revision || next.AllDay.ID != board.AllDay.ID || len(next.Dayparts) != len(board.Dayparts)+1 {
+		t.Fatalf("copy replaced the board: revision %d all-day %s dayparts %d", next.Revision, next.AllDay.ID, len(next.Dayparts))
+	}
+	copied := &next.Dayparts[len(next.Dayparts)-1]
+	if copied.ID != id || copied.Name != "Friday market" || copied.ID == board.AllDay.ID {
+		t.Fatalf("copy id %s name %s", copied.ID, copied.Name)
+	}
+	gotWhen, err := json.Marshal(copied.When)
+	if err != nil {
+		t.Fatal(err)
+	}
+	wantWhen, err := json.Marshal(when)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if string(gotWhen) != string(wantWhen) {
+		t.Fatalf("when %s want %s", gotWhen, wantWhen)
+	}
+	if copied.Sections[0].Items[0].Price != "$5" || copied.Specials[0].Price != "$4" || copied.Sections[2].Extras[0] != "Sprinkles" {
+		t.Fatalf("copied item %s special %s extra %v", copied.Sections[0].Items[0].Price, copied.Specials[0].Price, copied.Sections[2].Extras)
+	}
+	if err := next.Validate(); err != nil {
+		t.Fatal(err)
+	}
+	winner(t, next, chicagoAt(next.Zone, 2026, 10, 9, 17, 0, 0), string(id), "$4")
+
+	next.AllDay.Sections[0].Items[0].Price = "$1"
+	next.AllDay.Specials[0].Price = "$9"
+	next.AllDay.Sections[2].Extras[0] = "Oreos"
+	if copied.Sections[0].Items[0].Price != "$5" || copied.Specials[0].Price != "$4" || copied.Sections[2].Extras[0] != "Sprinkles" {
+		t.Fatal("editing the all-day menu changed the copy")
+	}
+	copied.Sections[0].Items[0].Price = "$2"
+	copied.Specials[0].Price = "$7"
+	copied.Sections[2].Extras[0] = "Caramel"
+	if next.AllDay.Sections[0].Items[0].Price != "$1" || next.AllDay.Specials[0].Price != "$9" || next.AllDay.Sections[2].Extras[0] != "Oreos" {
+		t.Fatal("editing the copy changed the all-day menu")
+	}
+	next.Dayparts[0].Specials[0].Price = "$11"
+	if board.AllDay.Sections[0].Items[0].Price != "$5" || board.AllDay.Specials[0].Price != "$4" || board.AllDay.Sections[2].Extras[0] != "Sprinkles" || board.Dayparts[0].Specials[0].Price != "$6" {
+		t.Fatal("editing the result changed the input board")
+	}
+	if len(board.Dayparts) != 2 {
+		t.Fatal("copy appended to the input board")
+	}
+
+	fromBreakfast := board.Dayparts[0].When
+	friday := oneOff(t, "2026-10-09", "2026-10-09", "16:00", "18:00")
+	branched, branchedID, err := board.Copy(board.Dayparts[0].ID, "Friday breakfast", friday)
+	if err != nil {
+		t.Fatal(err)
+	}
+	branch := branched.Dayparts[len(branched.Dayparts)-1]
+	if branch.ID != branchedID || branch.Specials[0].Price != "$6" {
+		t.Fatalf("breakfast copy %s %s", branch.ID, branch.Specials[0].Price)
+	}
+	branchWhen, _ := json.Marshal(branch.When)
+	fridayWhen, _ := json.Marshal(friday)
+	keptWhen, _ := json.Marshal(fromBreakfast)
+	if string(branchWhen) != string(fridayWhen) || string(branchWhen) == string(keptWhen) {
+		t.Fatalf("branch when %s", branchWhen)
+	}
+	if _, _, err := board.Copy(board.AllDay.ID, "Nope", menu.When{}); err == nil {
+		t.Fatal("copy accepted an empty window")
+	}
+	if _, _, err := board.Copy("missing", "Nope", when); err == nil {
+		t.Fatal("copy accepted a missing menu")
+	}
+}
+
 func TestProjectRequiresZone(t *testing.T) {
 	if _, err := (menu.Board{}).Project(time.Now()); err == nil {
 		t.Fatal("missing zone projected a timeline")

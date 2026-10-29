@@ -3,6 +3,7 @@ package menu
 import (
 	"crypto/rand"
 	"encoding/hex"
+	"encoding/json"
 	"errors"
 	"fmt"
 	"sort"
@@ -175,6 +176,54 @@ func NewMenuID() (MenuID, error) {
 		return "", err
 	}
 	return MenuID(hex.EncodeToString(buf[:])), nil
+}
+
+func (b Board) Copy(from MenuID, name string, when When) (Board, MenuID, error) {
+	if when.IsZero() {
+		return Board{}, "", errors.New("Choose when this menu is on the TV.")
+	}
+	src, ok := b.findMenu(from)
+	if !ok {
+		return Board{}, "", errors.New("That menu is not on the board.")
+	}
+	// A JSON round trip copies a slice added to the menu later without another assignment list.
+	raw, err := json.Marshal(src)
+	if err != nil {
+		return Board{}, "", err
+	}
+	var body MenuBody
+	if err := json.Unmarshal(raw, &body); err != nil {
+		return Board{}, "", err
+	}
+	id, err := NewMenuID()
+	if err != nil {
+		return Board{}, "", err
+	}
+	body.ID = id
+	body.Name = name
+	boardRaw, err := json.Marshal(b)
+	if err != nil {
+		return Board{}, "", err
+	}
+	var next Board
+	if err := json.Unmarshal(boardRaw, &next); err != nil {
+		return Board{}, "", err
+	}
+	next.Dayparts = append(next.Dayparts, Daypart{MenuBody: body, When: when})
+	next.normalize()
+	return next, id, nil
+}
+
+func (b Board) findMenu(id MenuID) (MenuBody, bool) {
+	if b.AllDay.ID == id {
+		return b.AllDay, true
+	}
+	for _, daypart := range b.Dayparts {
+		if daypart.ID == id {
+			return daypart.MenuBody, true
+		}
+	}
+	return MenuBody{}, false
 }
 
 type Snapshot struct {

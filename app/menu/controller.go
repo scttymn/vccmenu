@@ -86,6 +86,34 @@ func (c Controller) Save(w http.ResponseWriter, r *http.Request) error {
 	return respond(w, board)
 }
 
+func (c Controller) Copy(w http.ResponseWriter, r *http.Request) error {
+	raw, err := readDocument(w, r)
+	if err != nil {
+		return web.Status(400, errors.New("The menu could not be read."))
+	}
+	var req struct {
+		Board json.RawMessage `json:"board"`
+		From  MenuID          `json:"from"`
+		Name  string          `json:"name"`
+		When  When            `json:"when"`
+	}
+	if err := decodeStrict(raw, &req); err != nil {
+		return parseStatus(err)
+	}
+	board, err := ParseEditor(req.Board)
+	if err != nil {
+		return parseStatus(err)
+	}
+	next, _, err := board.Copy(req.From, req.Name, req.When)
+	if err != nil {
+		return web.Status(422, err)
+	}
+	if err := next.Validate(); err != nil {
+		return web.Status(422, err)
+	}
+	return respond(w, next)
+}
+
 func readDocument(w http.ResponseWriter, r *http.Request) ([]byte, error) {
 	return io.ReadAll(http.MaxBytesReader(w, r.Body, maxDocument))
 }

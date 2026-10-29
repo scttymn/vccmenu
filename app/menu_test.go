@@ -155,6 +155,89 @@ func menuJSON(t *testing.T, board menu.Board, when map[string]any) string {
 	}
 	return string(out)
 }
+func TestCopyMenuStaysUnsaved(t *testing.T) {
+	a := newApp(t)
+	h := a.Handler()
+	if w := call(h, "POST", "/admin/menu/copy", "{}", nil, ""); w.Code != 302 {
+		t.Fatalf("anonymous copy: %d", w.Code)
+	}
+	login := auth.Auth{DB: a.DB, Signer: a.Signer}
+	u, err := login.CreateUser(t.Context(), "copy@example.com", "test-password-123")
+	if err != nil {
+		t.Fatal(err)
+	}
+	session := httptest.NewRecorder()
+	if _, err := login.StartSession(session, httptest.NewRequest("GET", "/", nil), u); err != nil {
+		t.Fatal(err)
+	}
+	cookie := session.Result().Cookies()[0]
+	board, err := menu.Load(t.Context(), a.DB)
+	if err != nil {
+		t.Fatal(err)
+	}
+	original := board.AllDay.Sections[0].Items[0].Price
+	board.AllDay.Sections[0].Items[0].Price = "$9"
+	board.AllDay.Specials = []menu.Combo{{Number: 1, Name: "House", Contents: "Drip coffee", Price: "$4"}}
+	body := map[string]any{
+		"board": board,
+		"from":  board.AllDay.ID,
+		"name":  "Friday market",
+		"when":  map[string]any{"kind": "weekly", "days": []any{"fri"}, "start": "16:00", "end": "18:00"},
+	}
+	raw, err := json.Marshal(body)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if w := call(h, "POST", "/admin/menu/copy", string(raw), cookie, "https://evil.example"); w.Code != 422 {
+		t.Fatalf("cross-origin copy: %d %s", w.Code, w.Body)
+	}
+	w := call(h, "POST", "/admin/menu/copy", string(raw), cookie, "")
+	if w.Code != 200 {
+		t.Fatalf("copy: %d %s", w.Code, w.Body)
+	}
+	kept, err := menu.Load(t.Context(), a.DB)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if kept.Revision != board.Revision || len(kept.Dayparts) != 0 || kept.AllDay.Sections[0].Items[0].Price != original || len(kept.AllDay.Specials) != 0 {
+		t.Fatalf("copy wrote the database: revision %d price %s specials %d", kept.Revision, kept.AllDay.Sections[0].Items[0].Price, len(kept.AllDay.Specials))
+	}
+	var got menu.Board
+	if err := json.Unmarshal(w.Body.Bytes(), &got); err != nil {
+		t.Fatal(err)
+	}
+	if got.Revision != board.Revision || len(got.Dayparts) != 1 || got.Dayparts[0].Name != "Friday market" {
+		t.Fatalf("response revision %d dayparts %+v", got.Revision, got.Dayparts)
+	}
+	copied := got.Dayparts[0]
+	if got.AllDay.Sections[0].Items[0].Price != "$9" || copied.Sections[0].Items[0].Price != "$9" || copied.Specials[0].Price != "$4" || copied.Specials[0].Name != "House" {
+		t.Fatalf("response prices all-day %s copy item %s special %s", got.AllDay.Sections[0].Items[0].Price, copied.Sections[0].Items[0].Price, copied.Specials[0].Price)
+	}
+	got.AllDay.Sections[0].Items[0].Price = "$1"
+	got.AllDay.Specials[0].Price = "$8"
+	if got.Dayparts[0].Sections[0].Items[0].Price != "$9" || got.Dayparts[0].Specials[0].Price != "$4" {
+		t.Fatal("response menus share items or specials")
+	}
+	when, err := json.Marshal(got.Dayparts[0].When)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if !bytes.Contains(when, []byte(`"fri"`)) || !bytes.Contains(when, []byte(`"16:00"`)) || !bytes.Contains(when, []byte(`"18:00"`)) {
+		t.Fatalf("copy when %s", when)
+	}
+	nameless := map[string]any{"board": board, "from": board.AllDay.ID, "name": "", "when": body["when"]}
+	namelessRaw, _ := json.Marshal(nameless)
+	if w := call(h, "POST", "/admin/menu/copy", string(namelessRaw), cookie, ""); w.Code != 422 {
+		t.Fatalf("nameless copy: %d %s", w.Code, w.Body)
+	}
+	if w := call(h, "POST", "/admin/menu/copy", "{", cookie, ""); w.Code != 400 {
+		t.Fatalf("bad copy: %d %s", w.Code, w.Body)
+	}
+	if again, err := menu.Load(t.Context(), a.DB); err != nil || again.Revision != board.Revision || again.AllDay.Sections[0].Items[0].Price != original {
+		t.Fatal("rejected copy wrote the database")
+	}
+}
+
 func TestPublicMenuIsATimeline(t *testing.T) {
 	a := newApp(t)
 	w := call(a.Handler(), "GET", "/api/menu", "", nil, "")
