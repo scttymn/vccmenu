@@ -44,7 +44,7 @@ func display() templ.Component {
 				}()
 			}
 			ctx = templ.InitializeContext(ctx)
-			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 1, "<main id=\"screen\" aria-label=\"Coffee shop menu\"><div id=\"board\"><header><p id=\"brand\">Valley Coffee Co</p><h1 id=\"title\">Menu</h1></header><div id=\"columns\"></div></div></main><p id=\"loading\" role=\"status\">Loading menu…</p>")
+			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 1, "<main id=\"screen\" aria-label=\"Coffee shop menu\"><div id=\"board\"><header><p id=\"brand\">Valley Coffee Co</p><h1 id=\"title\">Menu</h1></header><div id=\"layout\"><div id=\"columns\"></div><aside id=\"rail\" hidden></aside></div></div></main><p id=\"loading\" role=\"status\">Loading menu…</p>")
 			if templ_7745c5c3_Err != nil {
 				return templ_7745c5c3_Err
 			}

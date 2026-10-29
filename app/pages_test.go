@@ -85,6 +85,26 @@ func TestEditorUsesClockInputs(t *testing.T) {
 	}
 }
 
+func TestDisplayFollowsTheTimeline(t *testing.T) {
+	h := handler(t)
+	script := get(t, h, assets.Path("display.js"))
+	body := script.Body.String()
+	if script.Code != http.StatusOK || !strings.Contains(body, "vcc-board-v2:/api/menu") || !strings.Contains(body, "vcc-menu-v1:/api/menu") {
+		t.Fatalf("display cache: %d", script.Code)
+	}
+	if !strings.Contains(body, "serverNow") || !strings.Contains(body, "fetchedAt") || !strings.Contains(body, "ORDER BY NUMBER") || !strings.Contains(body, "60000") || !strings.Contains(body, "get('at')") {
+		t.Fatal("display does not follow the cached timeline")
+	}
+	if strings.Contains(body, "datetime-local") || strings.Contains(body, "monday") {
+		t.Fatal("display interprets the schedule itself")
+	}
+	page := get(t, h, "/")
+	html := page.Body.String()
+	if page.Code != http.StatusOK || !strings.Contains(html, `id="columns"`) || !strings.Contains(html, `id="rail"`) {
+		t.Fatalf("display page: %d", page.Code)
+	}
+}
+
 func TestMenuAssetsUseGantryCaching(t *testing.T) {
 	h := handler(t)
 	for _, name := range []string{"display.css", "editor.css", "display.js", "editor.js", "navigation.js", "password.js", "setup.js"} {
