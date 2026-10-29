@@ -8,10 +8,6 @@ import (
 	"fmt"
 	"sort"
 	"time"
-
-	// Hosts and go test have no zoneinfo file unless the binary is built
-	// with -tags=timetzdata. Active still has to resolve America/Chicago.
-	_ "time/tzdata"
 )
 
 type whenKind int
@@ -186,7 +182,6 @@ func (b Board) Copy(from MenuID, name string, when When) (Board, MenuID, error) 
 	if !ok {
 		return Board{}, "", errors.New("That menu is not on the board.")
 	}
-	// A JSON round trip copies a slice added to the menu later without another assignment list.
 	raw, err := json.Marshal(src)
 	if err != nil {
 		return Board{}, "", err

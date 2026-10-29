@@ -447,7 +447,6 @@
     document.getElementById(key).oninput = function (e) { board[key] = e.target.value; changed(); };
   });
   document.getElementById('timezone').onchange = function (e) { board.timezone = e.target.value; changed(); };
-  // Open collapsed sections when a required field needs attention.
   form.addEventListener('invalid', function (e) { var p = e.target.parentElement; while (p) { if (p.tagName === 'DETAILS') p.open = true; p = p.parentElement; } }, true);
   form.onsubmit = async function (e) {
     e.preventDefault(); if (!dirty || saving) return;

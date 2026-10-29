@@ -77,7 +77,7 @@
       rail.appendChild(row);
     });
   }
-  function paint(snapshot, span, keepRail) {
+  function paint(snapshot, span) {
     var leftKey = JSON.stringify(snapshot.left);
     var panel = span ? span.panel : null;
     var panelKey = JSON.stringify(panel || null);
@@ -87,7 +87,7 @@
       paintedLeft = leftKey;
       changed = true;
     }
-    if (!span && keepRail) panelKey = paintedPanel;
+    if (!span) panelKey = paintedPanel;
     if (panelKey !== paintedPanel) {
       renderRail(panel);
       paintedPanel = panelKey;
@@ -118,22 +118,23 @@
     }
     return null;
   }
-  // The stored fetchedAt keeps the TV on the server clock after a reload, even when the device clock is wrong.
+  function clockOffset(value) {
+    return Date.parse(value.snapshot.serverNow) - value.fetchedAt;
+  }
   function shopTime(value) {
     var at = new URLSearchParams(location.search).get('at');
     if (at) {
       var frozen = Date.parse(at);
       if (!isNaN(frozen)) return frozen;
     }
-    return Date.now() + (Date.parse(value.snapshot.serverNow) - value.fetchedAt);
+    return Date.now() + clockOffset(value);
   }
   function arm() {
     clearTimeout(tick);
     if (!stored) return;
     var now = shopTime(stored);
     var span = spanContaining(stored.snapshot.timeline, now);
-    // Outside the cached timeline, leave the rail already on screen and still apply the left columns.
-    paint(stored.snapshot, span, true);
+    paint(stored.snapshot, span);
     var wait = 60000;
     if (span) {
       var until = Date.parse(span.end) - now;
@@ -153,7 +154,6 @@
       return value;
     } catch (e) { return null; }
   }
-  // A board saved before schedules can still paint three columns until a new menu arrives.
   function recallLegacy() {
     try {
       var raw = localStorage.getItem(legacyKey);
