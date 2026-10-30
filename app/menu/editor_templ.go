@@ -61,7 +61,7 @@ func editor(p editPage) templ.Component {
 			if templ_7745c5c3_Err != nil {
 				return templ_7745c5c3_Err
 			}
-			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 2, "<div class=\"intro\"><a class=\"back\" href=\"/admin\">← All menus</a><p class=\"eyebrow\"><span id=\"kind-label\">")
+			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 2, "<div class=\"intro\"><a class=\"back\" href=\"/admin\"><svg width=\"16\" height=\"16\" viewBox=\"0 0 16 16\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"2.25\" stroke-linecap=\"round\" stroke-linejoin=\"round\" aria-hidden=\"true\"><path d=\"M13 8H3M7 4L3 8l4 4\"></path></svg>All menus</a><p class=\"eyebrow\"><span id=\"kind-label\">")
 			if templ_7745c5c3_Err != nil {
 				return templ_7745c5c3_Err
 			}

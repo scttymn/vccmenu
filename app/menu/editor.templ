@@ -17,7 +17,7 @@ templ editor(p editPage) {
 		<main class="editor">
 			@layout.Navigation("menus")
 			<div class="intro">
-				<a class="back" href="/admin">← All menus</a>
+				<a class="back" href="/admin"><svg width="16" height="16" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="2.25" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M13 8H3M7 4L3 8l4 4"></path></svg>All menus</a>
 				<p class="eyebrow"><span id="kind-label">{ kindLabel(p.Menu) }</span> · { strings.ToUpper(p.Status) }</p>
 				<h1 id="menu-heading">{ p.Menu.Name }.</h1>
 				<p>Set when it shows, then change a price, add something good, or tuck an item away for later.</p>
