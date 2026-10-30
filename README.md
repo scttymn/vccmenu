@@ -14,9 +14,9 @@ Which menu is live: of the published menus scheduled at that moment, the one tha
 
 Schedules use the shop's time zone, `TIME_ZONE` (an IANA name such as `America/Chicago`, the default). Set it through Houston if the shop is elsewhere.
 
-Within a menu, change names or prices, add or reorder items, and turn **On the menu** off to hide an item without deleting it. Edit **Section name** at the top of each section to rename its heading on the live menu. Expand **Notes & toppings** for the notes. **Save menu** saves the menu and its schedule; Open menu pages check every 30 seconds. Conflicting saves are rejected so one editor cannot overwrite another's newer changes.
+Within a menu, change names or prices, add or reorder items, and turn **On the menu** off to hide an item without deleting it. A menu has one to three sections (Drinks, Food, …), each a column on the live menu: **+ Add a section** adds one, and **Delete this section** removes one with its items. Edit **Section name** at the top of each section to rename its heading. Expand **Notes & toppings** for the notes. **Save menu** saves the menu and its schedule; Open menu pages check every 30 seconds. Conflicting saves are rejected so one editor cannot overwrite another's newer changes.
 
-Prices are display text, so `$4`, `$4 / $4.50 / $5`, and `$.75 each` all work. The three-column menu board scales to fit, including in full-screen mode (click the menu or press Enter/F). Adding many items reduces the type size to keep everything visible, and a long display title shrinks to stay on one line.
+Prices are display text, so `$4`, `$4 / $4.50 / $5`, and `$.75 each` all work. The menu board scales to fit, including in full-screen mode (click the menu or press Enter/F). Adding many items reduces the type size to keep everything visible, and a long display title shrinks to stay on one line.
 
 After the first successful load, the menu page keeps its last menu locally if the network or server becomes unavailable. Reconnecting picks up the latest saved menu.
 

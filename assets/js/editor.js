@@ -21,7 +21,8 @@
   }
   function count() {
     var total = menu.sections.reduce(function (n, s) { return n + s.items.filter(function (i) { return i.visible; }).length; }, 0);
-    $('summary').textContent = total + ' items on this menu · 3 sections';
+    var n = menu.sections.length;
+    $('summary').textContent = total + ' items on this menu · ' + n + (n === 1 ? ' section' : ' sections');
   }
   function drawItems(section, card) {
     var list = card.querySelector('.item-list'); list.textContent = '';
@@ -240,11 +241,16 @@
     var s = menu.schedule;
     s.hours = s.hours || []; s.from = s.from || ''; s.until = s.until || ''; s.start = s.start || ''; s.end = s.end || '';
     $('name').value = menu.name; $('title').value = menu.title; $('title').placeholder = menu.name;
-    drawSchedule(); check();
+    drawSchedule(); check(); drawSections();
+    form.hidden = false;
+  }
+  // drawSections draws the menu's one to three sections, with open, if
+  // given, opened.
+  function drawSections(open) {
     var sections = $('sections'); sections.textContent = '';
     menu.sections.forEach(function (section, index) {
       var card = $('section-template').content.firstElementChild.cloneNode(true);
-      card.open = false;
+      card.open = index === open;
       card.querySelector('h2').textContent = section.name;
       card.querySelector('.section-number').textContent = '0' + (index + 1);
       card.querySelectorAll('[data-section]').forEach(function (input) {
@@ -261,10 +267,22 @@
         section.items.push({ name: '', price: '', visible: true }); changed(); drawItems(section, card); count();
         card.querySelector('.item-editor:last-child input').focus();
       };
+      var remove = card.querySelector('.remove-section');
+      remove.hidden = menu.sections.length === 1;
+      remove.onclick = function () {
+        if (!window.confirm('Delete ' + (section.name || 'this section') + ' and its ' + section.items.length + ' items?')) return;
+        menu.sections.splice(index, 1); changed(); drawSections();
+      };
       drawItems(section, card); sections.appendChild(card);
     });
-    count(); form.hidden = false;
+    $('add-section').hidden = menu.sections.length >= 3;
+    count();
   }
+  $('add-section').onclick = function () {
+    menu.sections.push({name: '', note: '', footer: '', extras: [], items: []});
+    changed(); drawSections(menu.sections.length - 1);
+    $('sections').lastElementChild.querySelector('[data-section=name]').focus();
+  };
   async function request(url, options) {
     var response = await fetch(url, Object.assign({headers: {'Accept':'application/json'}, cache: 'no-store'}, options || {}));
     if (response.redirected || response.status === 401) throw new Error('Your sign-in expired. Open the editor in another tab to sign in, then try saving again.');

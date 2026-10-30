@@ -29,8 +29,8 @@ type Section struct {
 	Items  []Item   `json:"items"`
 }
 
-// Content is what the menu page draws: the shop's name, the heading and the three
-// sections. A blank Title shows the menu's name instead.
+// Content is what the menu page draws: the shop's name, the heading and one
+// to three sections. A blank Title shows the menu's name instead.
 type Content struct {
 	Brand    string    `json:"brand"`
 	Title    string    `json:"title"`
@@ -123,8 +123,8 @@ func (m Menu) Validate() error {
 	if !valid(m.Brand, 60, true) || !valid(m.Title, 30, false) {
 		return errors.New("Keep the display title to 30 characters.")
 	}
-	if len(m.Sections) != 3 {
-		return errors.New("The menu needs three sections.")
+	if len(m.Sections) < 1 || len(m.Sections) > 3 {
+		return errors.New("A menu has one to three sections.")
 	}
 	for _, s := range m.Sections {
 		if !valid(s.Name, 30, true) || !valid(s.Note, 120, false) || !valid(s.Footer, 120, false) {

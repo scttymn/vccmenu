@@ -30,7 +30,7 @@
     while (title.scrollWidth > title.clientWidth && size > 48) { size -= 4; title.style.fontSize = size + 'px'; }
   }
   function render(menu) {
-    if (!menu || !Array.isArray(menu.sections) || menu.sections.length !== 3) throw new Error('Invalid menu');
+    if (!menu || !Array.isArray(menu.sections) || menu.sections.length < 1 || menu.sections.length > 3) throw new Error('Invalid menu');
     var serialized = JSON.stringify(menu);
     if (serialized === last) return;
     var fragment = document.createDocumentFragment();
