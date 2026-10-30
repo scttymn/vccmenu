@@ -20,6 +20,7 @@ templ editor(p editPage) {
 				<a class="back" href="/admin">← All menus</a>
 				<p class="eyebrow"><span id="kind-label">{ kindLabel(p.Menu) }</span> · { strings.ToUpper(p.Status) }</p>
 				<h1 id="menu-heading">{ p.Menu.Name }.</h1>
+				<p>Set when it shows, then change a price, add something good, or tuck an item away for later.</p>
 			</div>
 			<div class="toolbar">
 				<span id="summary">Loading your menu…</span>
@@ -86,9 +87,13 @@ templ editor(p editPage) {
 						</div>
 					</div>
 				</details>
-				<h2 class="group-label">WHAT’S ON IT</h2>
+				<div class="sections-head">
+					<h2 class="group-label">WHAT’S ON IT</h2>
+					<button id="add-section" class="secondary small-button" type="button"><svg width="14" height="14" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" aria-hidden="true"><path d="M8 3v10M3 8h10"></path></svg> Add section</button>
+					<span id="sections-full" class="sections-note" hidden>3 of 3 sections</span>
+				</div>
+				<p id="sections-empty" class="sections-empty" hidden>No sections yet. Add up to 3.</p>
 				<div id="sections"></div>
-				<button id="add-section" class="add secondary" type="button">+ Add a section</button>
 				<div class="save-bar"><div><strong id="save-label">Everything is up to date</strong><p id="status" role="status" aria-live="polite">Changes go live within 30 seconds of saving.</p></div><button id="save" type="submit" disabled>Save menu</button></div>
 			</form>
 			<p id="error" class="error" role="alert" hidden></p><button id="retry" class="secondary" type="button" hidden>Try loading again</button>
@@ -98,8 +103,8 @@ templ editor(p editPage) {
 				<button type="button" aria-pressed="false" data-day={ dayNames[d] }>{ dayLabels[d] }</button>
 			}
 		</div></fieldset><div class="times"><label>Starts<input type="time" data-hours="start" required/></label><label>Ends<input type="time" data-hours="end" required/></label></div><button class="remove-hours text-button" type="button">Remove these hours</button></div></template>
-		<template id="section-template"><details class="section-card"><summary><span class="section-number"></span><h2></h2><span class="item-count"></span><span class="chevron">⌄</span></summary><div class="section-content"><label class="section-name">Section name<input data-section="name" maxlength="30" required/></label><div class="item-list"></div><button class="add secondary" type="button">+ Add an item</button><details class="section-settings"><summary>Notes &amp; toppings</summary><div class="settings-fields"><label>Note above the items<input data-section="note" maxlength="120"/></label><label>Note below the items<input data-section="footer" maxlength="120"/></label><label>Toppings or extras <span class="hint">One per line</span><textarea data-section="extras" rows="4"></textarea></label></div></details><button class="remove-section text-button" type="button">Delete this section</button></div></details></template>
-		<template id="item-template"><div class="item-editor"><div class="item-fields"><label>Item name<input data-field="name" maxlength="80" required/></label><label>Price <input data-field="price" maxlength="40" required placeholder="$4 / $4.50 / $5"/></label></div><div class="item-actions"><label class="visibility"><input type="checkbox" data-field="visible"/><span>On the menu</span></label><div class="row-buttons"><button type="button" class="move-up" aria-label="Move item up">↑</button><button type="button" class="move-down" aria-label="Move item down">↓</button><button type="button" class="remove">Remove</button></div></div></div></template>
+		<template id="section-template"><section class="menu-section"><div class="menu-section-head"><span class="section-number" aria-hidden="true"></span><span class="menu-section-title"><span class="menu-section-name"></span><span class="item-count"></span></span><button class="secondary small-button edit-section" type="button" aria-expanded="false"><span class="edit-label">Edit</span><svg width="14" height="14" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 6l4 4 4-4"></path></svg></button><button class="icon-button delete-section" type="button"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 7h16M10 11v6M14 11v6M6 7l1 12a2 2 0 0 0 2 2h6a2 2 0 0 0 2-2l1-12M9 7V4h6v3"></path></svg></button></div><div class="confirm-delete" role="alert" hidden><span>Delete <strong class="confirm-name"></strong> and its <span class="confirm-count"></span>?</span><span class="confirm-buttons"><button class="secondary small-button cancel-delete" type="button">Cancel</button><button class="danger-button small-button confirm-delete-button" type="button">Delete section</button></span></div><div class="menu-section-body" hidden><label class="section-name">Section name<input data-section="name" maxlength="30" required/></label><div class="item-list"></div><p class="no-items" hidden>No items yet.</p><button class="add secondary" type="button">+ Add item</button><details class="section-settings"><summary>Notes &amp; toppings</summary><div class="settings-fields"><label>Note above the items<input data-section="note" maxlength="120"/></label><label>Note below the items<input data-section="footer" maxlength="120"/></label><label>Toppings or extras <span class="hint">One per line</span><textarea data-section="extras" rows="4"></textarea></label></div></details><p class="section-hint">Edits here are saved with <strong>Save menu</strong> at the bottom of the page. “Done” just closes the section.</p></div></section></template>
+		<template id="item-template"><div class="item-editor"><div class="item-fields"><label>Item name<input data-field="name" maxlength="80" required placeholder="New item"/></label><label>Price<input data-field="price" maxlength="40" required placeholder="$4 / $4.50 / $5"/></label></div><div class="item-actions"><label class="visibility"><input type="checkbox" data-field="visible"/><span>Show on menu</span></label><div class="row-buttons"><button type="button" class="icon-button move-up"><svg width="16" height="16" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M8 13V3M4 7l4-4 4 4"></path></svg></button><button type="button" class="icon-button move-down"><svg width="16" height="16" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M8 3v10M4 9l4 4 4-4"></path></svg></button><button type="button" class="remove">Remove</button></div></div></div></template>
 		@templ.JSONScript("initial-menu", p.Menu)
 	}
 }

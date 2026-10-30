@@ -24,10 +24,26 @@
     var n = menu.sections.length;
     $('summary').textContent = total + ' items on this menu · ' + n + (n === 1 ? ' section' : ' sections');
   }
+  // Sections: one is open at a time, and each says once it has changes
+  // that aren't saved.
+  var openSection = -1, confirmSection = -1, edited = new WeakSet();
+  function plural(n, one, many) { return n + ' ' + (n === 1 ? one : many); }
+  function itemCount(section, card) {
+    card.querySelector('.item-count').textContent = plural(section.items.length, 'item', 'items') + (edited.has(section) ? ' · unsaved changes' : '');
+    card.querySelector('.no-items').hidden = section.items.length > 0;
+  }
+  function sectionChanged(section, card) { edited.add(section); changed(); count(); itemCount(section, card); }
   function drawItems(section, card) {
     var list = card.querySelector('.item-list'); list.textContent = '';
     section.items.forEach(function (item, index) {
       var row = $('item-template').content.firstElementChild.cloneNode(true);
+      var up = row.querySelector('.move-up'), down = row.querySelector('.move-down'), remove = row.querySelector('.remove');
+      function labels() {
+        var label = item.name || 'new item';
+        up.setAttribute('aria-label', 'Move ' + label + ' up');
+        down.setAttribute('aria-label', 'Move ' + label + ' down');
+        remove.setAttribute('aria-label', 'Remove ' + label);
+      }
       row.classList.toggle('is-hidden', !item.visible);
       row.querySelectorAll('[data-field]').forEach(function (input) {
         var field = input.dataset.field;
@@ -35,20 +51,21 @@
         input.addEventListener('input', function () {
           item[field] = field === 'visible' ? input.checked : input.value;
           row.classList.toggle('is-hidden', !item.visible);
-          changed(); count();
+          labels(); sectionChanged(section, card);
         });
       });
-      var up = row.querySelector('.move-up'), down = row.querySelector('.move-down');
       up.disabled = index === 0; down.disabled = index === section.items.length - 1;
-      function move(to) { section.items.splice(index, 1); section.items.splice(to, 0, item); changed(); drawItems(section, card); }
+      function move(to) {
+        section.items.splice(index, 1); section.items.splice(to, 0, item);
+        sectionChanged(section, card); drawItems(section, card);
+        var moved = list.children[to].querySelector(to < index ? '.move-up' : '.move-down');
+        (moved.disabled ? list.children[to].querySelector('.remove') : moved).focus();
+      }
       up.onclick = function () { move(index - 1); }; down.onclick = function () { move(index + 1); };
-      row.querySelector('.remove').onclick = function () {
-        if (!window.confirm('Remove ' + (item.name || 'this item') + '? You can hide it using “On the menu” instead.')) return;
-        section.items.splice(index, 1); changed(); drawItems(section, card); count();
-      };
-      list.appendChild(row);
+      remove.onclick = function () { section.items.splice(index, 1); sectionChanged(section, card); drawItems(section, card); };
+      labels(); list.appendChild(row);
     });
-    card.querySelector('.item-count').textContent = section.items.length + ' items';
+    itemCount(section, card);
   }
 
   // The schedule. Times are the shop's local wall-clock strings, as the
@@ -244,44 +261,65 @@
     drawSchedule(); check(); drawSections();
     form.hidden = false;
   }
-  // drawSections draws the menu's one to three sections, with open, if
-  // given, opened.
-  function drawSections(open) {
+  // drawSections draws the menu's sections, then focuses, if given, what
+  // selector finds in section focus.
+  function drawSections(focus, selector) {
     var sections = $('sections'); sections.textContent = '';
     menu.sections.forEach(function (section, index) {
       var card = $('section-template').content.firstElementChild.cloneNode(true);
-      card.open = index === open;
-      card.querySelector('h2').textContent = section.name;
+      var open = index === openSection;
+      function names() {
+        var name = section.name || 'Untitled';
+        card.setAttribute('aria-label', name + ' section');
+        card.querySelector('.menu-section-name').textContent = name;
+        card.querySelector('.delete-section').setAttribute('aria-label', 'Delete ' + name + ' section');
+        card.querySelector('.confirm-name').textContent = name;
+      }
       card.querySelector('.section-number').textContent = '0' + (index + 1);
+      card.querySelector('.menu-section-body').hidden = !open;
+      var edit = card.querySelector('.edit-section');
+      edit.setAttribute('aria-expanded', String(open));
+      edit.querySelector('.edit-label').textContent = open ? 'Done' : 'Edit';
+      edit.onclick = function () { openSection = open ? -1 : index; confirmSection = -1; drawSections(index, '.edit-section'); };
+      card.querySelector('.confirm-delete').hidden = index !== confirmSection;
+      card.querySelector('.confirm-count').textContent = plural(section.items.length, 'item', 'items');
+      card.querySelector('.delete-section').onclick = function () { confirmSection = index; drawSections(index, '.cancel-delete'); };
+      card.querySelector('.cancel-delete').onclick = function () { confirmSection = -1; drawSections(index, '.delete-section'); };
+      card.querySelector('.confirm-delete-button').onclick = function () {
+        menu.sections.splice(index, 1);
+        openSection = openSection === index ? -1 : openSection > index ? openSection - 1 : openSection;
+        confirmSection = -1; changed(); drawSections();
+        $('add-section').focus();
+      };
       card.querySelectorAll('[data-section]').forEach(function (input) {
         var field = input.dataset.section;
         input.value = field === 'extras' ? section.extras.join('\n') : section[field];
         input.oninput = function () {
           section[field] = field === 'extras' ? input.value.split('\n').map(function (v) { return v.trim(); }).filter(Boolean) : input.value;
-          if (field === 'name') card.querySelector('h2').textContent = input.value;
-          changed();
+          if (field === 'name') names();
+          sectionChanged(section, card);
         };
       });
       card.querySelector('.add').onclick = function () {
         if (section.items.length >= 40) { fail('Each section can have up to 40 items.'); return; }
-        section.items.push({ name: '', price: '', visible: true }); changed(); drawItems(section, card); count();
+        section.items.push({ name: '', price: '', visible: true }); sectionChanged(section, card); drawItems(section, card);
         card.querySelector('.item-editor:last-child input').focus();
       };
-      var remove = card.querySelector('.remove-section');
-      remove.hidden = menu.sections.length === 1;
-      remove.onclick = function () {
-        if (!window.confirm('Delete ' + (section.name || 'this section') + ' and its ' + section.items.length + ' items?')) return;
-        menu.sections.splice(index, 1); changed(); drawSections();
-      };
-      drawItems(section, card); sections.appendChild(card);
+      names(); drawItems(section, card); sections.appendChild(card);
     });
-    $('add-section').hidden = menu.sections.length >= 3;
+    var full = menu.sections.length >= 3;
+    $('add-section').hidden = full; $('sections-full').hidden = !full;
+    $('sections-empty').hidden = menu.sections.length > 0;
     count();
+    if (focus !== undefined && sections.children[focus]) sections.children[focus].querySelector(selector).focus();
   }
   $('add-section').onclick = function () {
-    menu.sections.push({name: '', note: '', footer: '', extras: [], items: []});
-    changed(); drawSections(menu.sections.length - 1);
-    $('sections').lastElementChild.querySelector('[data-section=name]').focus();
+    if (menu.sections.length >= 3) return;
+    var section = {name: 'New section', note: '', footer: '', extras: [], items: []};
+    menu.sections.push(section); edited.add(section);
+    openSection = menu.sections.length - 1; confirmSection = -1;
+    changed(); drawSections(openSection, '[data-section=name]');
+    document.activeElement.select();
   };
   async function request(url, options) {
     var response = await fetch(url, Object.assign({headers: {'Accept':'application/json'}, cache: 'no-store'}, options || {}));
@@ -296,8 +334,17 @@
     catch (e) { fail('Could not load your menu. ' + e.message); retry.hidden = false; }
   }
   retry.onclick = load;
-  // Open collapsed sections when a required field needs attention.
-  form.addEventListener('invalid', function (e) {var p=e.target.parentElement;while(p){if(p.tagName==='DETAILS')p.open=true;p=p.parentElement;}}, true);
+  // Open a closed section, and its notes, when a required field in it needs
+  // attention.
+  form.addEventListener('invalid', function (e) {
+    var card = e.target.closest('.menu-section'), body = card && card.querySelector('.menu-section-body');
+    if (body && body.hidden) {
+      body.hidden = false; openSection = Array.prototype.indexOf.call($('sections').children, card);
+      var edit = card.querySelector('.edit-section');
+      edit.setAttribute('aria-expanded', 'true'); edit.querySelector('.edit-label').textContent = 'Done';
+    }
+    for (var p = e.target.parentElement; p; p = p.parentElement) if (p.tagName === 'DETAILS') p.open = true;
+  }, true);
   form.onsubmit = async function (e) {
     e.preventDefault(); if (!dirty || saving) return;
     saving = true; save.disabled = true; form.classList.add('saving'); error.hidden = true;
