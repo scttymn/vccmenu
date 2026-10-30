@@ -10,9 +10,9 @@ import (
 )
 
 func TestInitialMenuEscapesScriptContent(t *testing.T) {
-	m := Menu{Brand: "</script><script>alert(1)</script>"}
+	m := Menu{ID: 1, Content: Content{Brand: "</script><script>alert(1)</script>"}}
 	w := httptest.NewRecorder()
-	if err := page(w, httptest.NewRequest("GET", "/admin/", nil), 200, editor(m)); err != nil {
+	if err := page(w, httptest.NewRequest("GET", "/admin/menus/1", nil), 200, editor(editPage{Menu: m})); err != nil {
 		t.Fatal(err)
 	}
 	body := w.Body.String()

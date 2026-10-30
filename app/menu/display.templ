@@ -3,9 +3,24 @@ package menu
 import "github.com/scttymn/vccmenu/app/shared/layout"
 import "github.com/scttymn/vccmenu/assets"
 
-templ display() {
-	@layout.Layout(layout.Page{Title: "Valley Coffee Co Menu", Styles: assets.DisplayStyles, Scripts: []string{"display.js"}}) {
-		<main id="screen" aria-label="Coffee shop menu"><div id="board"><header><p id="brand">Valley Coffee Co</p><h1 id="title">Menu</h1></header><div id="columns"></div></div></main>
+// displayPage is where the menu page gets its menu: the live one, or, as a
+// preview, one menu and the editor's unsaved draft of it (Draft is its
+// localStorage key).
+type displayPage struct {
+	Endpoint    string
+	Draft, Name string
+}
+
+templ display(p displayPage) {
+	@layout.Layout(layout.Page{Title: title(p), Styles: assets.DisplayStyles, Scripts: []string{"display.js"}, NoIndex: p.Draft != ""}) {
+		<main id="screen" aria-label="Coffee shop menu" data-endpoint={ p.Endpoint } data-draft={ p.Draft }><div id="board"><header><p id="brand">Valley Coffee Co</p><h1 id="title">Menu</h1></header><div id="columns"></div></div></main>
 		<p id="loading" role="status">Loading menu…</p>
 	}
+}
+
+func title(p displayPage) string {
+	if p.Draft != "" {
+		return "Preview " + p.Name + " · Valley Coffee Co"
+	}
+	return "Valley Coffee Co Menu"
 }

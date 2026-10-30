@@ -83,13 +83,13 @@ func TestAnySignedInUserCanAddUsersWithFullAccess(t *testing.T) {
 	if list.Header().Get("Cache-Control") != "no-store" {
 		t.Fatal("account list can be cached")
 	}
-	m, err := menu.Load(t.Context(), a.DB)
+	m, err := menu.Load(t.Context(), a.DB, 1)
 	if err != nil {
 		t.Fatal(err)
 	}
 	m.Sections[0].Name = "Coffee"
 	body, _ := json.Marshal(m)
-	if w := call(h, "PUT", "/admin/menu", string(body), second, ""); w.Code != 200 {
+	if w := call(h, "PUT", "/admin/menus/1", string(body), second, ""); w.Code != 200 {
 		t.Fatalf("new user cannot edit: %d", w.Code)
 	}
 	if w := add("third@example.com", "third-test-password", "third-test-password", "", second); w.Code != 303 {

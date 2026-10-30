@@ -12,6 +12,7 @@ services:
       SECRET_KEY: ${SECRET_KEY:-}   # signs cookies and forms; blank: a key kept in the database
       ADMIN_EMAIL: ${ADMIN_EMAIL:-}
       ADMIN_PASSWORD: ${ADMIN_PASSWORD:-}
+      TIME_ZONE: ${TIME_ZONE:-}     # the shop's, for menu schedules; blank: America/Chicago
     volumes:
       - .:/app                     # the code, rebuilt on change
       - data:/data                 # the SQLite database and uploads

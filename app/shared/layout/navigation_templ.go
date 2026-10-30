@@ -33,13 +33,13 @@ func Navigation(active string) templ.Component {
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
-		if active == "menu" {
+		if active == "menus" {
 			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 2, " aria-current=\"page\"")
 			if templ_7745c5c3_Err != nil {
 				return templ_7745c5c3_Err
 			}
 		}
-		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 3, ">Menu</a> <a href=\"/admin/users\"")
+		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 3, ">Menus</a> <a href=\"/admin/users\"")
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
@@ -59,7 +59,7 @@ func Navigation(active string) templ.Component {
 				return templ_7745c5c3_Err
 			}
 		}
-		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 7, ">Password</a> <a href=\"/\" target=\"_blank\" rel=\"noopener\">View TV menu ↗</a><form action=\"/logout\" method=\"post\"><button class=\"text-button\" type=\"submit\">Sign out</button></form></nav></header>")
+		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 7, ">Password</a> <a href=\"/\" target=\"_blank\" rel=\"noopener\">View live menu ↗</a><form action=\"/logout\" method=\"post\"><button class=\"text-button\" type=\"submit\">Sign out</button></form></nav></header>")
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}

@@ -17,6 +17,9 @@ type Config struct {
 	JobsInServer  bool
 	AdminEmail    string // optional first-admin bootstrap, supplied through Houston
 	AdminPassword string
+	// TimeZone is the shop's, which menu schedules are in: TIME_ZONE, an IANA
+	// name; default America/Chicago.
+	TimeZone string
 }
 
 // Development is true where the code is mounted and changes as you work:
@@ -39,6 +42,7 @@ func Load(getenv func(string) string) Config {
 		AdminEmail:    getenv("ADMIN_EMAIL"),
 		AdminPassword: getenv("ADMIN_PASSWORD"),
 		JobsInServer:  getenv("JOBS_IN_SERVER") != "false",
+		TimeZone:      or("TIME_ZONE", "America/Chicago"),
 	}
 	c.DatabaseURL = or("DATABASE_URL", "sqlite://"+c.DataDir+"/vccmenu.sqlite3")
 	return c

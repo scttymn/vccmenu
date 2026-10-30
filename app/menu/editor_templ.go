@@ -8,10 +8,19 @@ package menu
 import "github.com/a-h/templ"
 import templruntime "github.com/a-h/templ/runtime"
 
+import "strings"
 import "github.com/scttymn/vccmenu/app/shared/layout"
 import "github.com/scttymn/vccmenu/assets"
+import "github.com/scttymn/gantry/web"
 
-func editor(m Menu) templ.Component {
+func kindLabel(m Menu) string {
+	if m.Schedule.Kind == Event {
+		return "ONE-OFF EVENT"
+	}
+	return "RECURRING MENU"
+}
+
+func editor(p editPage) templ.Component {
 	return templruntime.GeneratedTemplate(func(templ_7745c5c3_Input templruntime.GeneratedComponentInput) (templ_7745c5c3_Err error) {
 		templ_7745c5c3_W, ctx := templ_7745c5c3_Input.Writer, templ_7745c5c3_Input.Context
 		if templ_7745c5c3_CtxErr := ctx.Err(); templ_7745c5c3_CtxErr != nil {
@@ -48,21 +57,148 @@ func editor(m Menu) templ.Component {
 			if templ_7745c5c3_Err != nil {
 				return templ_7745c5c3_Err
 			}
-			templ_7745c5c3_Err = layout.Navigation("menu").Render(ctx, templ_7745c5c3_Buffer)
+			templ_7745c5c3_Err = layout.Navigation("menus").Render(ctx, templ_7745c5c3_Buffer)
 			if templ_7745c5c3_Err != nil {
 				return templ_7745c5c3_Err
 			}
-			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 2, "<div class=\"intro\"><p class=\"eyebrow\">A LITTLE UPDATE, FRESHLY SERVED</p><h1>Make it yours.</h1><p>Change a price, add something good, or tuck an item away for later.</p></div><div class=\"toolbar\"><span id=\"summary\">Loading your menu…</span></div><form id=\"menu-form\" hidden><details class=\"settings\"><summary>Shop name &amp; menu title</summary><div class=\"settings-fields\"><label>Shop name<input id=\"brand\" maxlength=\"60\" required></label><label>Menu title<input id=\"title\" maxlength=\"30\" required></label></div></details><div id=\"sections\"></div><div class=\"save-bar\"><div><strong id=\"save-label\">Everything is up to date</strong><p id=\"status\" role=\"status\" aria-live=\"polite\">Changes reach the TV within 30 seconds of saving.</p></div><button id=\"save\" type=\"submit\" disabled>Save menu</button></div></form><p id=\"error\" class=\"error\" role=\"alert\" hidden></p><button id=\"retry\" class=\"secondary\" type=\"button\" hidden>Try loading again</button></main><template id=\"section-template\"><details class=\"section-card\"><summary><span class=\"section-number\"></span><h2></h2><span class=\"item-count\"></span><span class=\"chevron\">⌄</span></summary><div class=\"section-content\"><label class=\"section-name\">Section name<input data-section=\"name\" maxlength=\"30\" required></label><div class=\"item-list\"></div><button class=\"add secondary\" type=\"button\">+ Add an item</button><details class=\"section-settings\"><summary>Notes &amp; toppings</summary><div class=\"settings-fields\"><label>Note above the items<input data-section=\"note\" maxlength=\"120\"></label><label>Note below the items<input data-section=\"footer\" maxlength=\"120\"></label><label>Toppings or extras <span class=\"hint\">One per line</span><textarea data-section=\"extras\" rows=\"4\"></textarea></label></div></details></div></details></template><template id=\"item-template\"><div class=\"item-editor\"><div class=\"item-fields\"><label>Item name<input data-field=\"name\" maxlength=\"80\" required></label><label>Price <input data-field=\"price\" maxlength=\"40\" required placeholder=\"$4 / $4.50 / $5\"></label></div><div class=\"item-actions\"><label class=\"visibility\"><input type=\"checkbox\" data-field=\"visible\"><span>On the menu</span></label><div class=\"row-buttons\"><button type=\"button\" class=\"move-up\" aria-label=\"Move item up\">↑</button><button type=\"button\" class=\"move-down\" aria-label=\"Move item down\">↓</button><button type=\"button\" class=\"remove\">Remove</button></div></div></div></template>")
+			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 2, "<div class=\"intro\"><a class=\"back\" href=\"/admin\">← All menus</a><p class=\"eyebrow\"><span id=\"kind-label\">")
 			if templ_7745c5c3_Err != nil {
 				return templ_7745c5c3_Err
 			}
-			templ_7745c5c3_Err = templ.JSONScript("initial-menu", m).Render(ctx, templ_7745c5c3_Buffer)
+			var templ_7745c5c3_Var3 string
+			templ_7745c5c3_Var3, templ_7745c5c3_Err = templ.JoinStringErrs(kindLabel(p.Menu))
+			if templ_7745c5c3_Err != nil {
+				return templ.Error{Err: templ_7745c5c3_Err, FileName: `app/menu/editor.templ`, Line: 21, Col: 64}
+			}
+			_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var3))
+			if templ_7745c5c3_Err != nil {
+				return templ_7745c5c3_Err
+			}
+			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 3, "</span> · ")
+			if templ_7745c5c3_Err != nil {
+				return templ_7745c5c3_Err
+			}
+			var templ_7745c5c3_Var4 string
+			templ_7745c5c3_Var4, templ_7745c5c3_Err = templ.JoinStringErrs(strings.ToUpper(p.Status))
+			if templ_7745c5c3_Err != nil {
+				return templ.Error{Err: templ_7745c5c3_Err, FileName: `app/menu/editor.templ`, Line: 21, Col: 104}
+			}
+			_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var4))
+			if templ_7745c5c3_Err != nil {
+				return templ_7745c5c3_Err
+			}
+			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 4, "</p><h1 id=\"menu-heading\">")
+			if templ_7745c5c3_Err != nil {
+				return templ_7745c5c3_Err
+			}
+			var templ_7745c5c3_Var5 string
+			templ_7745c5c3_Var5, templ_7745c5c3_Err = templ.JoinStringErrs(p.Menu.Name)
+			if templ_7745c5c3_Err != nil {
+				return templ.Error{Err: templ_7745c5c3_Err, FileName: `app/menu/editor.templ`, Line: 22, Col: 39}
+			}
+			_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var5))
+			if templ_7745c5c3_Err != nil {
+				return templ_7745c5c3_Err
+			}
+			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 5, ".</h1></div><div class=\"toolbar\"><span id=\"summary\">Loading your menu…</span><div class=\"toolbar-actions\"><a id=\"preview\" class=\"text-button\" href=\"")
+			if templ_7745c5c3_Err != nil {
+				return templ_7745c5c3_Err
+			}
+			var templ_7745c5c3_Var6 templ.SafeURL
+			templ_7745c5c3_Var6, templ_7745c5c3_Err = templ.JoinURLErrs(templ.SafeURL("/admin/menus/" + web.IDText(p.Menu.ID) + "/preview"))
+			if templ_7745c5c3_Err != nil {
+				return templ.Error{Err: templ_7745c5c3_Err, FileName: `app/menu/editor.templ`, Line: 27, Col: 115}
+			}
+			_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var6))
+			if templ_7745c5c3_Err != nil {
+				return templ_7745c5c3_Err
+			}
+			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 6, "\" target=\"_blank\">Preview ↗</a><form action=\"")
+			if templ_7745c5c3_Err != nil {
+				return templ_7745c5c3_Err
+			}
+			var templ_7745c5c3_Var7 templ.SafeURL
+			templ_7745c5c3_Var7, templ_7745c5c3_Err = templ.JoinURLErrs(templ.SafeURL("/admin/menus/" + web.IDText(p.Menu.ID) + "/duplicate"))
+			if templ_7745c5c3_Err != nil {
+				return templ.Error{Err: templ_7745c5c3_Err, FileName: `app/menu/editor.templ`, Line: 28, Col: 89}
+			}
+			_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var7))
+			if templ_7745c5c3_Err != nil {
+				return templ_7745c5c3_Err
+			}
+			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 7, "\" method=\"post\"><button class=\"text-button\" type=\"submit\">Duplicate menu</button></form><form id=\"delete-form\" action=\"")
+			if templ_7745c5c3_Err != nil {
+				return templ_7745c5c3_Err
+			}
+			var templ_7745c5c3_Var8 templ.SafeURL
+			templ_7745c5c3_Var8, templ_7745c5c3_Err = templ.JoinURLErrs(templ.SafeURL("/admin/menus/" + web.IDText(p.Menu.ID) + "/delete"))
+			if templ_7745c5c3_Err != nil {
+				return templ.Error{Err: templ_7745c5c3_Err, FileName: `app/menu/editor.templ`, Line: 29, Col: 103}
+			}
+			_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var8))
+			if templ_7745c5c3_Err != nil {
+				return templ_7745c5c3_Err
+			}
+			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 8, "\" method=\"post\"><button class=\"text-button danger\" type=\"submit\">Delete menu</button></form></div></div><form id=\"menu-form\" data-url=\"")
+			if templ_7745c5c3_Err != nil {
+				return templ_7745c5c3_Err
+			}
+			var templ_7745c5c3_Var9 string
+			templ_7745c5c3_Var9, templ_7745c5c3_Err = templ.ResolveAttributeValue("/admin/menus/" + web.IDText(p.Menu.ID))
+			if templ_7745c5c3_Err != nil {
+				return templ.Error{Err: templ_7745c5c3_Err, FileName: `app/menu/editor.templ`, Line: 32, Col: 74}
+			}
+			_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ_7745c5c3_Var9)
+			if templ_7745c5c3_Err != nil {
+				return templ_7745c5c3_Err
+			}
+			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 9, "\" hidden><div class=\"settings-fields name-fields\"><label>Menu name<input id=\"name\" maxlength=\"60\" required><span class=\"field-hint\">Only you see this, in the admin.</span></label> <label>Display title<input id=\"title\" maxlength=\"30\"><span class=\"field-hint\">Heading at the top of the live menu. Leave blank to use the menu name.</span></label></div><details class=\"section-card schedule-card\" open><summary><span class=\"section-number\" aria-hidden=\"true\"><svg width=\"18\" height=\"18\" viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"2\" stroke-linecap=\"round\"><circle cx=\"12\" cy=\"12\" r=\"9\"></circle><path d=\"M12 7v5l3 2\"></path></svg></span> <span class=\"schedule-heading\"><h2>When it shows</h2><span class=\"schedule-summary\"><span id=\"schedule-summary\"></span><span id=\"schedule-flag\" class=\"flag\" hidden></span></span></span> <span class=\"chevron\" aria-hidden=\"true\">⌄</span></summary><div class=\"section-content schedule-content\"><fieldset class=\"kind\"><legend>Type</legend><div class=\"kind-options\"><label class=\"kind-option\"><input type=\"radio\" name=\"kind\" value=\"weekly\"><span><strong>Repeats weekly</strong><span>Same days and hours every week</span></span></label> <label class=\"kind-option\"><input type=\"radio\" name=\"kind\" value=\"event\"><span><strong>One-off event</strong><span>Specific date(s), like a festival</span></span></label></div></fieldset><div id=\"weekly-fields\" class=\"schedule-part\"><div id=\"hours-rows\"></div><button id=\"add-hours\" class=\"add secondary\" type=\"button\">+ Add different hours for other days</button><div class=\"season\"><p class=\"season-label\">Only during a season <span>(optional — leave blank to run all year)</span></p><label>From<input id=\"season-from\" type=\"date\"></label> <label>Until<input id=\"season-until\" type=\"date\"></label></div></div><div id=\"event-fields\" class=\"schedule-part\"><div class=\"event-times\"><label>Starts<input id=\"event-start\" type=\"datetime-local\" step=\"900\"></label> <label>Ends<input id=\"event-end\" type=\"datetime-local\" step=\"900\"></label></div><p id=\"event-duration\" class=\"field-hint\"></p></div><p id=\"schedule-error\" class=\"error\" role=\"alert\" hidden></p><div id=\"overlap\" class=\"overlap\" role=\"status\" hidden><p><strong id=\"overlap-title\"></strong> <span id=\"overlap-note\"></span></p><div id=\"timeline\" class=\"timeline\" hidden><div id=\"timeline-ticks\" class=\"ticks\" aria-hidden=\"true\"></div><div class=\"tracks\"><div id=\"timeline-others\" class=\"track\"></div><div id=\"timeline-track\" class=\"track\"><button id=\"event-bar\" class=\"event-bar\" type=\"button\"><span class=\"handle\" data-drag=\"start\" aria-hidden=\"true\"></span><span id=\"event-bar-label\" class=\"bar-label\"></span><span class=\"handle\" data-drag=\"end\" aria-hidden=\"true\"></span></button></div><div id=\"overlap-box\" class=\"overlap-box\" aria-hidden=\"true\"></div></div><p id=\"timeline-note\" class=\"timeline-note\" hidden></p></div><button id=\"overlap-fix\" class=\"secondary\" type=\"button\" hidden></button></div><div class=\"publish-row\"><label class=\"visibility publish\"><input id=\"published\" type=\"checkbox\"><span>Publish this menu <span class=\"hint\">(uncheck to keep it as a draft)</span></span></label> <span id=\"no-overlap\" class=\"pill pill-ok\" hidden><svg width=\"14\" height=\"14\" viewBox=\"0 0 16 16\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"2.2\" stroke-linecap=\"round\" stroke-linejoin=\"round\" aria-hidden=\"true\"><path d=\"M3 8.5l3 3 7-7\"></path></svg> No overlaps with your other menus</span></div></div></details><h2 class=\"group-label\">WHAT’S ON IT</h2><div id=\"sections\"></div><div class=\"save-bar\"><div><strong id=\"save-label\">Everything is up to date</strong><p id=\"status\" role=\"status\" aria-live=\"polite\">Changes go live within 30 seconds of saving.</p></div><button id=\"save\" type=\"submit\" disabled>Save menu</button></div></form><p id=\"error\" class=\"error\" role=\"alert\" hidden></p><button id=\"retry\" class=\"secondary\" type=\"button\" hidden>Try loading again</button></main><template id=\"hours-template\"><div class=\"hours-row\"><fieldset class=\"days\"><legend>Days</legend><div class=\"day-buttons\">")
+			if templ_7745c5c3_Err != nil {
+				return templ_7745c5c3_Err
+			}
+			for _, d := range Week {
+				templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 10, "<button type=\"button\" aria-pressed=\"false\" data-day=\"")
+				if templ_7745c5c3_Err != nil {
+					return templ_7745c5c3_Err
+				}
+				var templ_7745c5c3_Var10 string
+				templ_7745c5c3_Var10, templ_7745c5c3_Err = templ.ResolveAttributeValue(dayNames[d])
+				if templ_7745c5c3_Err != nil {
+					return templ.Error{Err: templ_7745c5c3_Err, FileName: `app/menu/editor.templ`, Line: 97, Col: 69}
+				}
+				_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ_7745c5c3_Var10)
+				if templ_7745c5c3_Err != nil {
+					return templ_7745c5c3_Err
+				}
+				templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 11, "\">")
+				if templ_7745c5c3_Err != nil {
+					return templ_7745c5c3_Err
+				}
+				var templ_7745c5c3_Var11 string
+				templ_7745c5c3_Var11, templ_7745c5c3_Err = templ.JoinStringErrs(dayLabels[d])
+				if templ_7745c5c3_Err != nil {
+					return templ.Error{Err: templ_7745c5c3_Err, FileName: `app/menu/editor.templ`, Line: 97, Col: 86}
+				}
+				_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var11))
+				if templ_7745c5c3_Err != nil {
+					return templ_7745c5c3_Err
+				}
+				templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 12, "</button>")
+				if templ_7745c5c3_Err != nil {
+					return templ_7745c5c3_Err
+				}
+			}
+			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 13, "</div></fieldset><div class=\"times\"><label>Starts<input type=\"time\" data-hours=\"start\" required></label><label>Ends<input type=\"time\" data-hours=\"end\" required></label></div><button class=\"remove-hours text-button\" type=\"button\">Remove these hours</button></div></template><template id=\"section-template\"><details class=\"section-card\"><summary><span class=\"section-number\"></span><h2></h2><span class=\"item-count\"></span><span class=\"chevron\">⌄</span></summary><div class=\"section-content\"><label class=\"section-name\">Section name<input data-section=\"name\" maxlength=\"30\" required></label><div class=\"item-list\"></div><button class=\"add secondary\" type=\"button\">+ Add an item</button><details class=\"section-settings\"><summary>Notes &amp; toppings</summary><div class=\"settings-fields\"><label>Note above the items<input data-section=\"note\" maxlength=\"120\"></label><label>Note below the items<input data-section=\"footer\" maxlength=\"120\"></label><label>Toppings or extras <span class=\"hint\">One per line</span><textarea data-section=\"extras\" rows=\"4\"></textarea></label></div></details></div></details></template><template id=\"item-template\"><div class=\"item-editor\"><div class=\"item-fields\"><label>Item name<input data-field=\"name\" maxlength=\"80\" required></label><label>Price <input data-field=\"price\" maxlength=\"40\" required placeholder=\"$4 / $4.50 / $5\"></label></div><div class=\"item-actions\"><label class=\"visibility\"><input type=\"checkbox\" data-field=\"visible\"><span>On the menu</span></label><div class=\"row-buttons\"><button type=\"button\" class=\"move-up\" aria-label=\"Move item up\">↑</button><button type=\"button\" class=\"move-down\" aria-label=\"Move item down\">↓</button><button type=\"button\" class=\"remove\">Remove</button></div></div></div></template>")
+			if templ_7745c5c3_Err != nil {
+				return templ_7745c5c3_Err
+			}
+			templ_7745c5c3_Err = templ.JSONScript("initial-menu", p.Menu).Render(ctx, templ_7745c5c3_Buffer)
 			if templ_7745c5c3_Err != nil {
 				return templ_7745c5c3_Err
 			}
 			return nil
 		})
-		templ_7745c5c3_Err = layout.Layout(layout.Page{Title: "Edit menu · Valley Coffee Co", Styles: assets.EditorStyles, Scripts: []string{"editor.js", "navigation.js"}, NoIndex: true}).Render(templ.WithChildren(ctx, templ_7745c5c3_Var2), templ_7745c5c3_Buffer)
+		templ_7745c5c3_Err = layout.Layout(layout.Page{Title: "Edit " + p.Menu.Name + " · Valley Coffee Co", Styles: assets.EditorStyles, Scripts: []string{"editor.js", "navigation.js"}, NoIndex: true}).Render(templ.WithChildren(ctx, templ_7745c5c3_Var2), templ_7745c5c3_Buffer)
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}

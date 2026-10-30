@@ -2,8 +2,12 @@
   'use strict';
   var board = document.getElementById('board');
   var columns = document.getElementById('columns');
-	var endpoint = '/api/menu';
-  var cacheKey = 'vcc-menu-v1:' + endpoint;
+  var screen = document.getElementById('screen');
+  var endpoint = screen.dataset.endpoint || '/api/menu';
+  // A preview shows one menu: the editor's unsaved draft (kept in
+  // localStorage under draftKey while it's open), else its saved version.
+  var draftKey = screen.dataset.draft;
+  var cacheKey = draftKey ? '' : 'vcc-menu-v1:' + endpoint;
   var last = '';
   function node(tag, className, value) {
     var el = document.createElement(tag); el.className = className || '';
@@ -18,6 +22,12 @@
     board.style.left = ((width - 1920 * scale) / 2) + 'px';
     board.style.top = ((available - height * scale) / 2) + 'px';
     board.style.visibility = 'visible';
+  }
+  // fitTitle shrinks a long heading ("Wednesday Night") to one line.
+  function fitTitle(title) {
+    title.style.fontSize = '';
+    var size = parseFloat(getComputedStyle(title).fontSize);
+    while (title.scrollWidth > title.clientWidth && size > 48) { size -= 4; title.style.fontSize = size + 'px'; }
   }
   function render(menu) {
     if (!menu || !Array.isArray(menu.sections) || menu.sections.length !== 3) throw new Error('Invalid menu');
@@ -47,12 +57,21 @@
     });
     document.getElementById('brand').textContent = menu.brand;
     document.getElementById('title').textContent = menu.title;
+    fitTitle(document.getElementById('title'));
     columns.textContent = ''; columns.appendChild(fragment);
     last = serialized; document.body.classList.add('ready'); fit();
-    try { localStorage.setItem(cacheKey, serialized); } catch (_) {}
+    if (cacheKey) try { localStorage.setItem(cacheKey, serialized); } catch (_) {}
+  }
+  function draft() {
+    try {
+      var saved = draftKey && JSON.parse(localStorage.getItem(draftKey));
+      return saved && Date.now() - saved.at < 30000 ? saved.menu : null;
+    } catch (_) { return null; }
   }
   var pending = false;
   function refresh() {
+    var unsaved = draft();
+    if (unsaved) { try { render(unsaved); } catch (_) {} return; }
     if (pending) return;
     pending = true;
     var xhr = new XMLHttpRequest();
@@ -65,8 +84,10 @@
     xhr.onloadend = function () { pending = false; };
     xhr.send();
   }
-  try { var saved = localStorage.getItem(cacheKey); if (saved) render(JSON.parse(saved)); } catch (_) {}
-  refresh(); setInterval(refresh, 30000);
+  if (cacheKey) try { var saved = localStorage.getItem(cacheKey); if (saved) render(JSON.parse(saved)); } catch (_) {}
+  refresh(); setInterval(refresh, draftKey ? 10000 : 30000);
+  // The editor's changes, as they're made in another tab.
+  window.addEventListener('storage', function (e) { if (draftKey && e.key === draftKey) refresh(); });
   window.addEventListener('resize', fit);
   document.addEventListener('fullscreenchange', fit);
   document.addEventListener('visibilitychange', function () { if (!document.hidden) refresh(); });

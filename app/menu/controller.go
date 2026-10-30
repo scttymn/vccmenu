@@ -18,6 +18,14 @@ import (
 type Controller struct {
 	DB   *db.DB
 	Auth *auth.Auth
+	Zone *time.Location // the shop's, which schedules are in
+}
+
+func (c Controller) zone() *time.Location {
+	if c.Zone == nil {
+		return time.UTC
+	}
+	return c.Zone
 }
 
 func page(w http.ResponseWriter, r *http.Request, status int, view templ.Component) error {
@@ -25,64 +33,67 @@ func page(w http.ResponseWriter, r *http.Request, status int, view templ.Compone
 	return web.Render(w, r, status, view)
 }
 func (c Controller) Display(w http.ResponseWriter, r *http.Request) error {
-	return page(w, r, http.StatusOK, display())
+	return page(w, r, http.StatusOK, display(displayPage{Endpoint: "/api/menu"}))
 }
-func (c Controller) Editor(w http.ResponseWriter, r *http.Request) error {
-	m, err := Load(r.Context(), c.DB)
+
+// Preview is the menu page for one menu, live or not: its saved version, or
+// the editor's unsaved draft while one is open.
+func (c Controller) Preview(w http.ResponseWriter, r *http.Request) error {
+	m, err := Load(r.Context(), c.DB, web.ID(r, "id"))
 	if err != nil {
 		return err
 	}
-	return page(w, r, http.StatusOK, editor(m))
+	id := web.IDText(m.ID)
+	return page(w, r, http.StatusOK, display(displayPage{Endpoint: "/admin/menus/" + id + "/display", Draft: "vcc-preview:" + id, Name: m.Name}))
+}
+
+// PreviewData is a menu's saved version, as it would show.
+func (c Controller) PreviewData(w http.ResponseWriter, r *http.Request) error {
+	m, err := Load(r.Context(), c.DB, web.ID(r, "id"))
+	if err != nil {
+		return err
+	}
+	return respond(w, shown(m))
 }
 func (c Controller) Login(w http.ResponseWriter, r *http.Request, p auth.Page) error {
 	return page(w, r, http.StatusOK, login(p))
 }
-func (c Controller) Public(w http.ResponseWriter, r *http.Request) error {
-	m, err := Load(r.Context(), c.DB)
-	if err != nil {
-		return err
-	}
-	for k := range m.Sections {
-		visible := make([]Item, 0)
+
+// shown is m as the menu page draws it: its heading, and only the items
+// on the menu.
+func shown(m Menu) any {
+	sections := make([]Section, len(m.Sections))
+	for k, s := range m.Sections {
+		s.Items = make([]Item, 0)
 		for _, item := range m.Sections[k].Items {
 			if item.Visible {
-				visible = append(visible, item)
+				s.Items = append(s.Items, item)
 			}
 		}
-		m.Sections[k].Items = visible
+		sections[k] = s
 	}
-	return respond(w, m)
+	return struct {
+		Content
+		Revision int64 `json:"revision"`
+	}{Content{Brand: m.Brand, Title: m.Heading(), Sections: sections}, m.Revision}
 }
-func (c Controller) Read(w http.ResponseWriter, r *http.Request) error {
-	m, err := Load(r.Context(), c.DB)
+
+// Public is the menu live now, as the menu page draws it.
+func (c Controller) Public(w http.ResponseWriter, r *http.Request) error {
+	menus, err := All(r.Context(), c.DB)
 	if err != nil {
 		return err
 	}
-	return respond(w, m)
+	m, ok := NewTimeline(menus, time.Now(), c.zone()).At(time.Now())
+	if !ok {
+		return web.Status(404, errors.New("No menu is published."))
+	}
+	return respond(w, shown(m))
 }
 func respond(w http.ResponseWriter, v any) error {
 	w.Header().Set("Content-Type", "application/json")
 	w.Header().Set("Cache-Control", "no-store")
 	return json.NewEncoder(w).Encode(v)
-}
-func (c Controller) Save(w http.ResponseWriter, r *http.Request) error {
-	var m Menu
-	dec := json.NewDecoder(http.MaxBytesReader(w, r.Body, 64<<10))
-	dec.DisallowUnknownFields()
-	if err := dec.Decode(&m); err != nil {
-		return web.Status(400, errors.New("The menu could not be read."))
-	}
-	if err := m.Validate(); err != nil {
-		return web.Status(422, err)
-	}
-	if err := Save(r.Context(), c.DB, m); err != nil {
-		if errors.Is(err, ErrConflict) {
-			return web.Status(409, err)
-		}
-		return err
-	}
-	m.Revision++
-	return respond(w, m)
 }
 func (c Controller) Setup(w http.ResponseWriter, r *http.Request) error {
 	w.Header().Set("Referrer-Policy", "no-referrer")

@@ -31,7 +31,9 @@ func TestMenuPagesAndAssetLinks(t *testing.T) {
 		{"/", "Valley Coffee Co Menu", false},
 		{"/login", "Sign in", false},
 		{"/setup", "Set up your account", false},
-		{"/admin/", "Edit menu", true},
+		{"/admin/", "Menus", true},
+		{"/admin/menus/1", "Edit Regular Menu", true},
+		{"/admin/menus/1/preview", "Preview Regular Menu", true},
 		{"/admin/password", "Change password", true},
 		{"/admin/users", "Users", true},
 	} {

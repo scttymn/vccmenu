@@ -1,19 +1,104 @@
 package menu
 
+import "strings"
 import "github.com/scttymn/vccmenu/app/shared/layout"
 import "github.com/scttymn/vccmenu/assets"
+import "github.com/scttymn/gantry/web"
 
-templ editor(m Menu) {
-	@layout.Layout(layout.Page{Title: "Edit menu · Valley Coffee Co", Styles: assets.EditorStyles, Scripts: []string{"editor.js", "navigation.js"}, NoIndex: true}) {
+func kindLabel(m Menu) string {
+	if m.Schedule.Kind == Event {
+		return "ONE-OFF EVENT"
+	}
+	return "RECURRING MENU"
+}
+
+templ editor(p editPage) {
+	@layout.Layout(layout.Page{Title: "Edit " + p.Menu.Name + " · Valley Coffee Co", Styles: assets.EditorStyles, Scripts: []string{"editor.js", "navigation.js"}, NoIndex: true}) {
 		<main class="editor">
-			@layout.Navigation("menu")
-			<div class="intro"><p class="eyebrow">A LITTLE UPDATE, FRESHLY SERVED</p><h1>Make it yours.</h1><p>Change a price, add something good, or tuck an item away for later.</p></div>
-			<div class="toolbar"><span id="summary">Loading your menu…</span></div>
-			<form id="menu-form" hidden><details class="settings"><summary>Shop name &amp; menu title</summary><div class="settings-fields"><label>Shop name<input id="brand" maxlength="60" required/></label><label>Menu title<input id="title" maxlength="30" required/></label></div></details><div id="sections"></div><div class="save-bar"><div><strong id="save-label">Everything is up to date</strong><p id="status" role="status" aria-live="polite">Changes reach the TV within 30 seconds of saving.</p></div><button id="save" type="submit" disabled>Save menu</button></div></form>
+			@layout.Navigation("menus")
+			<div class="intro">
+				<a class="back" href="/admin">← All menus</a>
+				<p class="eyebrow"><span id="kind-label">{ kindLabel(p.Menu) }</span> · { strings.ToUpper(p.Status) }</p>
+				<h1 id="menu-heading">{ p.Menu.Name }.</h1>
+			</div>
+			<div class="toolbar">
+				<span id="summary">Loading your menu…</span>
+				<div class="toolbar-actions">
+					<a id="preview" class="text-button" href={ templ.SafeURL("/admin/menus/" + web.IDText(p.Menu.ID) + "/preview") } target="_blank">Preview ↗</a>
+					<form action={ templ.SafeURL("/admin/menus/" + web.IDText(p.Menu.ID) + "/duplicate") } method="post"><button class="text-button" type="submit">Duplicate menu</button></form>
+					<form id="delete-form" action={ templ.SafeURL("/admin/menus/" + web.IDText(p.Menu.ID) + "/delete") } method="post"><button class="text-button danger" type="submit">Delete menu</button></form>
+				</div>
+			</div>
+			<form id="menu-form" data-url={ "/admin/menus/" + web.IDText(p.Menu.ID) } hidden>
+				<div class="settings-fields name-fields">
+					<label>Menu name<input id="name" maxlength="60" required/><span class="field-hint">Only you see this, in the admin.</span></label>
+					<label>Display title<input id="title" maxlength="30"/><span class="field-hint">Heading at the top of the live menu. Leave blank to use the menu name.</span></label>
+				</div>
+				<details class="section-card schedule-card" open>
+					<summary>
+						<span class="section-number" aria-hidden="true"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><circle cx="12" cy="12" r="9"></circle><path d="M12 7v5l3 2"></path></svg></span>
+						<span class="schedule-heading"><h2>When it shows</h2><span class="schedule-summary"><span id="schedule-summary"></span><span id="schedule-flag" class="flag" hidden></span></span></span>
+						<span class="chevron" aria-hidden="true">⌄</span>
+					</summary>
+					<div class="section-content schedule-content">
+						<fieldset class="kind">
+							<legend>Type</legend>
+							<div class="kind-options">
+								<label class="kind-option"><input type="radio" name="kind" value="weekly"/><span><strong>Repeats weekly</strong><span>Same days and hours every week</span></span></label>
+								<label class="kind-option"><input type="radio" name="kind" value="event"/><span><strong>One-off event</strong><span>Specific date(s), like a festival</span></span></label>
+							</div>
+						</fieldset>
+						<div id="weekly-fields" class="schedule-part">
+							<div id="hours-rows"></div>
+							<button id="add-hours" class="add secondary" type="button">+ Add different hours for other days</button>
+							<div class="season">
+								<p class="season-label">Only during a season <span>(optional — leave blank to run all year)</span></p>
+								<label>From<input id="season-from" type="date"/></label>
+								<label>Until<input id="season-until" type="date"/></label>
+							</div>
+						</div>
+						<div id="event-fields" class="schedule-part">
+							<div class="event-times">
+								<label>Starts<input id="event-start" type="datetime-local" step="900"/></label>
+								<label>Ends<input id="event-end" type="datetime-local" step="900"/></label>
+							</div>
+							<p id="event-duration" class="field-hint"></p>
+						</div>
+						<p id="schedule-error" class="error" role="alert" hidden></p>
+						<div id="overlap" class="overlap" role="status" hidden>
+							<p><strong id="overlap-title"></strong> <span id="overlap-note"></span></p>
+							<div id="timeline" class="timeline" hidden>
+								<div id="timeline-ticks" class="ticks" aria-hidden="true"></div>
+								<div class="tracks">
+									<div id="timeline-others" class="track"></div>
+									<div id="timeline-track" class="track">
+										<button id="event-bar" class="event-bar" type="button"><span class="handle" data-drag="start" aria-hidden="true"></span><span id="event-bar-label" class="bar-label"></span><span class="handle" data-drag="end" aria-hidden="true"></span></button>
+									</div>
+									<div id="overlap-box" class="overlap-box" aria-hidden="true"></div>
+								</div>
+								<p id="timeline-note" class="timeline-note" hidden></p>
+							</div>
+							<button id="overlap-fix" class="secondary" type="button" hidden></button>
+						</div>
+						<div class="publish-row">
+							<label class="visibility publish"><input id="published" type="checkbox"/><span>Publish this menu <span class="hint">(uncheck to keep it as a draft)</span></span></label>
+							<span id="no-overlap" class="pill pill-ok" hidden><svg width="14" height="14" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M3 8.5l3 3 7-7"></path></svg> No overlaps with your other menus</span>
+						</div>
+					</div>
+				</details>
+				<h2 class="group-label">WHAT’S ON IT</h2>
+				<div id="sections"></div>
+				<div class="save-bar"><div><strong id="save-label">Everything is up to date</strong><p id="status" role="status" aria-live="polite">Changes go live within 30 seconds of saving.</p></div><button id="save" type="submit" disabled>Save menu</button></div>
+			</form>
 			<p id="error" class="error" role="alert" hidden></p><button id="retry" class="secondary" type="button" hidden>Try loading again</button>
 		</main>
+		<template id="hours-template"><div class="hours-row"><fieldset class="days"><legend>Days</legend><div class="day-buttons">
+			for _, d := range Week {
+				<button type="button" aria-pressed="false" data-day={ dayNames[d] }>{ dayLabels[d] }</button>
+			}
+		</div></fieldset><div class="times"><label>Starts<input type="time" data-hours="start" required/></label><label>Ends<input type="time" data-hours="end" required/></label></div><button class="remove-hours text-button" type="button">Remove these hours</button></div></template>
 		<template id="section-template"><details class="section-card"><summary><span class="section-number"></span><h2></h2><span class="item-count"></span><span class="chevron">⌄</span></summary><div class="section-content"><label class="section-name">Section name<input data-section="name" maxlength="30" required/></label><div class="item-list"></div><button class="add secondary" type="button">+ Add an item</button><details class="section-settings"><summary>Notes &amp; toppings</summary><div class="settings-fields"><label>Note above the items<input data-section="note" maxlength="120"/></label><label>Note below the items<input data-section="footer" maxlength="120"/></label><label>Toppings or extras <span class="hint">One per line</span><textarea data-section="extras" rows="4"></textarea></label></div></details></div></details></template>
 		<template id="item-template"><div class="item-editor"><div class="item-fields"><label>Item name<input data-field="name" maxlength="80" required/></label><label>Price <input data-field="price" maxlength="40" required placeholder="$4 / $4.50 / $5"/></label></div><div class="item-actions"><label class="visibility"><input type="checkbox" data-field="visible"/><span>On the menu</span></label><div class="row-buttons"><button type="button" class="move-up" aria-label="Move item up">↑</button><button type="button" class="move-down" aria-label="Move item down">↓</button><button type="button" class="remove">Remove</button></div></div></div></template>
-		@templ.JSONScript("initial-menu", m)
+		@templ.JSONScript("initial-menu", p.Menu)
 	}
 }

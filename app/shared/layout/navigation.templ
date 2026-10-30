@@ -7,10 +7,10 @@ templ Navigation(active string) {
 		<nav id="account-navigation" class="account-nav" aria-label="Account navigation">
 			<a
 				href="/admin"
-				if active == "menu" {
+				if active == "menus" {
 					aria-current="page"
 				}
-			>Menu</a>
+			>Menus</a>
 			<a
 				href="/admin/users"
 				if active == "users" {
@@ -23,7 +23,7 @@ templ Navigation(active string) {
 					aria-current="page"
 				}
 			>Password</a>
-			<a href="/" target="_blank" rel="noopener">View TV menu ↗</a>
+			<a href="/" target="_blank" rel="noopener">View live menu ↗</a>
 			<form action="/logout" method="post"><button class="text-button" type="submit">Sign out</button></form>
 		</nav>
 	</header>

@@ -1,14 +1,24 @@
 # Valley Coffee Co Menu Manager
 
-A Gantry + SQLite app deployed with Houston. `https://vccmenu.svnmns.com/` is the TV menu; `/admin` is the phone-friendly editor.
+A Gantry + SQLite app deployed with Houston. `https://vccmenu.svnmns.com/` is the live menu; `/admin` is the phone-friendly editor.
 
 ## Editing
 
-Sign in at `/admin`. Change names or prices, add or reorder items, and turn **On the menu** off to hide an item without deleting it. Edit **Section name** at the top of each section to rename its TV heading. Expand **Notes & toppings** for the notes. **Save menu** publishes the complete draft. TVs check every 30 seconds. Conflicting saves are rejected so one editor cannot overwrite another's newer changes.
+Sign in at `/admin` to see every menu and which one is live now. **+ New menu** starts a draft; **Duplicate menu** copies one (also as a draft, so it can't clash with the original until you reschedule and publish it).
 
-Prices are display text, so `$4`, `$4 / $4.50 / $5`, and `$.75 each` all work. The three-column TV board scales to fit, including in full-screen mode (click the menu or press Enter/F). Adding many items reduces the type size to keep everything visible.
+Each menu has a **Menu name** (only editors see it) and an optional **Display title**, the heading on the live menu; blank uses the name. Under **When it shows**, a menu either **repeats weekly** (days and hours, with different hours for other days, optionally only during a season) or is a **one-off event** (a start and end, possibly over several days). Uncheck **Publish this menu** to keep it as a draft.
 
-After the first successful load, the TV retains its last menu locally if the network or server becomes unavailable. Reconnecting picks up the latest saved menu.
+Which menu is live: of the published menus scheduled at that moment, the one that started latest; between menus, the last one to run stays up until the next one starts; before anything has run, the oldest menu. The editor warns when a schedule overlaps another published menu, says which one would show, and for events offers to move it clear (drag or use the arrow keys on the timeline to adjust by hand). Past events move to an **Ended** list. The last remaining menu can't be deleted.
+
+**Preview ↗** in a menu's editor opens that menu in a new browser window, live or not, exactly as it will look. It shows the editor's unsaved changes as you type and goes back to the saved version once you save or leave the editor. Previews are only for signed-in editors and never change the live menu.
+
+Schedules use the shop's time zone, `TIME_ZONE` (an IANA name such as `America/Chicago`, the default). Set it through Houston if the shop is elsewhere.
+
+Within a menu, change names or prices, add or reorder items, and turn **On the menu** off to hide an item without deleting it. Edit **Section name** at the top of each section to rename its heading on the live menu. Expand **Notes & toppings** for the notes. **Save menu** saves the menu and its schedule; Open menu pages check every 30 seconds. Conflicting saves are rejected so one editor cannot overwrite another's newer changes.
+
+Prices are display text, so `$4`, `$4 / $4.50 / $5`, and `$.75 each` all work. The three-column menu board scales to fit, including in full-screen mode (click the menu or press Enter/F). Adding many items reduces the type size to keep everything visible, and a long display title shrinks to stay on one line.
+
+After the first successful load, the menu page keeps its last menu locally if the network or server becomes unavailable. Reconnecting picks up the latest saved menu.
 
 ## Run locally
 
@@ -19,7 +29,7 @@ bin/gantry dev
 bin/gantry test
 ```
 
-The app is at `http://vccmenu.localhost`. SQLite lives in the `data` volume; migrations and initial menu seeding run at startup. Seeding inserts only into an empty database and never replaces saved edits.
+The app is at `http://vccmenu.localhost`. SQLite lives in the `data` volume; migrations and initial menu seeding run at startup. Seeding inserts the Regular Menu only into an empty database and never replaces saved edits.
 
 In development, startup and `bin/gantry db seed` also create the local editor account **admin@example.com** with password **Password1!**. This account is created only when `GANTRY_ENV=development`; seeding never resets its password or replaces existing users. Production and test environments do not create this account.
 
@@ -60,7 +70,7 @@ bin/gantry deploy --server --follow
 
 `SECRET_KEY` can be provided through Houston; when unset, Gantry creates and keeps the key in the database. Never put credentials in this repository.
 
-The public menu endpoint excludes hidden items. Editor writes require a signed-in session on the app's own origin. The old GitHub Pages site is retired; TVs use the Houston address above.
+The public menu endpoint excludes hidden items. Editor writes require a signed-in session on the app's own origin. The old GitHub Pages site is retired; Screens use the Houston address above.
 
 ## Menu source
 

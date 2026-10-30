@@ -1,0 +1,57 @@
+package menu
+
+import "github.com/scttymn/vccmenu/app/shared/layout"
+import "github.com/scttymn/vccmenu/assets"
+import "github.com/scttymn/gantry/web"
+
+templ menusView(p menusPage) {
+	@layout.Layout(layout.Page{Title: "Menus · Valley Coffee Co", Styles: assets.EditorStyles, Scripts: []string{"navigation.js"}, NoIndex: true}) {
+		<main class="editor">
+			@layout.Navigation("menus")
+			<div class="intro"><p class="eyebrow">WHAT’S LIVE, AND WHEN</p><h1>Your menus.</h1><p>Each menu has its own items and its own schedule. Whichever one is scheduled goes live. Between menus, the last one stays up until the next one starts. If two overlap, the newer one takes over at its start time.</p></div>
+			if p.Deleted {
+				<p class="notice" role="status">Menu deleted.</p>
+			}
+			<section class="live-now" aria-label="Live now">
+				if p.Live != "" {
+					<p><span class="live-dot" aria-hidden="true"></span><span>Live now: <strong>{ p.Live }</strong> { p.Until }</span></p>
+				} else {
+					<p>No menu is published, so screens keep showing the last menu they loaded.</p>
+				}
+				<a href="/" target="_blank" rel="noopener">View live menu ↗</a>
+			</section>
+			<section aria-label="All menus">
+				<div class="toolbar"><span>{ p.Count }</span><form action="/admin/menus" method="post"><button type="submit">+ New menu</button></form></div>
+				if len(p.Recurring) > 0 {
+					<h2 class="group-label">RECURRING</h2>
+					@menuCards(p.Recurring)
+				}
+				if len(p.Events) > 0 {
+					<h2 class="group-label">ONE-OFF EVENTS</h2>
+					@menuCards(p.Events)
+				}
+				if len(p.Ended) > 0 {
+					<h2 class="group-label">ENDED</h2>
+					@menuCards(p.Ended)
+				} else {
+					<p class="group-note">Past one-off events move to an “Ended” list after their date, so you can duplicate them next year.</p>
+				}
+			</section>
+		</main>
+	}
+}
+
+templ menuCards(cards []menuCard) {
+	<ul class="menu-cards">
+		for _, card := range cards {
+			<li>
+				<a class="menu-card" href={ templ.SafeURL("/admin/menus/" + web.IDText(card.ID)) }>
+					<span class="section-number" aria-hidden="true">{ card.Number }</span>
+					<span class="menu-card-text"><span class="menu-card-name">{ card.Name }</span><span class="menu-card-line">{ card.Line }</span></span>
+					<span class={ "pill", templ.KV("pill-live", card.Live), templ.KV("pill-muted", card.Draft || card.Ended) }>{ card.Status }</span>
+					<span class="chevron" aria-hidden="true">›</span>
+				</a>
+			</li>
+		}
+	</ul>
+}

@@ -118,6 +118,10 @@ func build(ctx context.Context, cfg config.Config, logger *slog.Logger) (a *app.
 	if err := seeds.Development(ctx, database, cfg.Env); err != nil {
 		return nil, nil, err
 	}
+	zone, err := time.LoadLocation(cfg.TimeZone)
+	if err != nil {
+		return nil, nil, fmt.Errorf("TIME_ZONE: %w", err)
+	}
 	key, err := sign.Key(ctx, database, cfg.SecretKey)
 	if err != nil {
 		return nil, nil, err
@@ -127,7 +131,7 @@ func build(ctx context.Context, cfg config.Config, logger *slog.Logger) (a *app.
 		return nil, nil, err
 	}
 	signer := sign.Signer{Key: key}
-	a = &app.App{DB: database, Log: logger, Signer: signer, Jobs: queue, Live: live.New(signer, live.Options{Log: logger})}
+	a = &app.App{DB: database, Log: logger, Signer: signer, Jobs: queue, Live: live.New(signer, live.Options{Log: logger}), Zone: zone}
 	if err := a.DefineJobs(); err != nil {
 		return nil, nil, err
 	}

@@ -29,6 +29,8 @@ type App struct {
 	// a.Live.Broadcast(ctx, "post:"+id, turbo.Replace(...)), or
 	// a.Live.Refresh("post:"+id, turbo.RequestID(r)).
 	Live *live.Hub
+	// Zone is the shop's time zone, which menu schedules are in.
+	Zone *time.Location
 }
 
 // Handler is every route, in gantry's middleware.
@@ -39,7 +41,7 @@ func (a *App) Handler() http.Handler {
 	rt.Public = assets.All
 
 	login := &auth.Auth{DB: a.DB, Signer: a.Signer, Log: a.Log, Limits: &web.Limits{}, Idle: 30 * 24 * time.Hour, Lifetime: 90 * 24 * time.Hour, Paths: auth.Paths{AfterLogin: "/admin"}}
-	c := menu.Controller{DB: a.DB, Auth: login}
+	c := menu.Controller{DB: a.DB, Auth: login, Zone: a.Zone}
 	login.Views.Login = c.Login
 	login.Routes(rt)
 	rt.Handle("GET /{$}", c.Display)
@@ -47,9 +49,16 @@ func (a *App) Handler() http.Handler {
 	rt.Handle("GET /setup", c.Setup)
 	rt.Handle("POST /setup", c.CreateEditor)
 	rt.Scope("/admin", web.Pipeline{login.Required}, func(s *web.Scope) {
-		s.Handle("GET /{$}", c.Editor)
-		s.Handle("GET /menu", c.Read)
-		s.Handle("PUT /menu", c.Save)
+		s.Handle("GET /{$}", c.Menus)
+		s.Handle("POST /menus", c.Create)
+		s.Handle("GET /menus/{id}", c.Editor)
+		s.Handle("GET /menus/{id}/data", c.Read)
+		s.Handle("GET /menus/{id}/preview", c.Preview)
+		s.Handle("GET /menus/{id}/display", c.PreviewData)
+		s.Handle("PUT /menus/{id}", c.Save)
+		s.Handle("POST /menus/{id}/check", c.Check)
+		s.Handle("POST /menus/{id}/duplicate", c.Duplicate)
+		s.Handle("POST /menus/{id}/delete", c.Delete)
 		s.Handle("GET /password", c.Password)
 		s.Handle("POST /password", c.ChangePassword)
 		s.Handle("GET /users", c.Users)
