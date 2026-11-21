@@ -1,0 +1,16 @@
+# Dependency updates as pull requests: Go modules and the Dockerfile's base
+# images weekly, and security fixes as soon as they're published. Merging
+# one to main deploys it (Houston runs the tests first).
+version: 2
+updates:
+  - package-ecosystem: gomod
+    directory: /
+    schedule:
+      interval: weekly
+    groups:
+      golang-x:
+        patterns: ["golang.org/x/*"]
+  - package-ecosystem: docker
+    directory: /
+    schedule:
+      interval: weekly
