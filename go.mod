@@ -4,17 +4,19 @@ go 1.27.1
 
 require (
 	github.com/a-h/templ v0.3.1020
-	github.com/scttymn/gantry v0.15.2
+	github.com/scttymn/gantry v0.16.0
 )
 
 require (
 	github.com/PuerkitoBio/goquery v1.13.0 // indirect
 	github.com/adhocore/gronx v1.20.5 // indirect
 	github.com/andybalholm/cascadia v1.3.4 // indirect
+	github.com/coreos/go-oidc/v3 v3.21.0 // indirect
 	github.com/dustin/go-humanize v1.0.1 // indirect
 	github.com/ebitengine/purego v0.10.1 // indirect
 	github.com/gen2brain/avif v0.6.0 // indirect
 	github.com/gen2brain/webp v0.6.4 // indirect
+	github.com/go-jose/go-jose/v4 v4.1.4 // indirect
 	github.com/google/uuid v1.6.0 // indirect
 	github.com/jackc/pgpassfile v1.0.0 // indirect
 	github.com/jackc/pgservicefile v0.0.0-20240606120523-5a60cdf6a761 // indirect
@@ -36,6 +38,7 @@ require (
 	golang.org/x/crypto v0.57.0 // indirect
 	golang.org/x/image v0.46.0 // indirect
 	golang.org/x/net v0.59.0 // indirect
+	golang.org/x/oauth2 v0.37.0 // indirect
 	golang.org/x/sync v0.23.0 // indirect
 	golang.org/x/sys v0.48.0 // indirect
 	golang.org/x/text v0.42.0 // indirect
